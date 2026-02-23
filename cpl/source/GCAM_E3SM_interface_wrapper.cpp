@@ -61,14 +61,22 @@ extern "C" {
       const bool writeDegreeDays = *aWriteDegreeDays == 1 ? true : false;
       bool scaleAgYield = *aScaleAgYield == 1 ? true : false;
       bool scaleCarbon = *aScaleCarbon == 1 ? true : false;
+      bool useDegDays = *aUseDegDays == 1 ? true : false;
       bool restartRun = *aRestartRun == 1 ? true : false;
   
       p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss, BaseLucGcamFileName, BaseCO2GcamFileName, Spinup,
+<<<<<<< HEAD
                      aELMArea, aELMPFTFract, aELMNPP, aELMHR,
                      aELMDegreeDays, aPopDensity, aELMLandFrac,
                      aNumLon, aNumLat, aNumPFT, aNumReg, aNumCty, aNumSector, aNumPeriod,
                      MappingFile, aFirstCoupledYear, readScalars, writeScalars, readDegreeDays, writeDegreeDays,
                      scaleAgYield, scaleCarbon, baseNPPFile, baseHRFile, basePFTwtFile, restartRun);
+=======
+                     aELMArea, aELMPFTFract, aELMNPP, aELMHR, aELMDegreeDays,
+                     aNumLon, aNumLat, aNumPFT, aNumReg, aNumCty, aNumSector, aNumPeriod,
+                     MappingFile, aFirstCoupledYear, readScalars, writeScalars,
+                     scaleAgYield, scaleCarbon, useDegDays, baseNPPFile, baseHRFile, basePFTwtFile, restartRun);
+>>>>>>> d8ee104c5 (Add degree-days parameter to GCAM C++ coupling interface)
   }
 
   // Downscale Emissions
