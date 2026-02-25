@@ -94,19 +94,53 @@ private:
      { 1, { "Forest", "UnmanagedForest", "ProtectedUnmanagedForest" } }, // 1. NEMPFT, Needleleaf evergreen temperate tree
      { 2, { "Forest", "UnmanagedForest", "ProtectedUnmanagedForest" } }, // 2. NEBPFT, Needleleaf evergreen boreal tree
      { 3, { "Forest", "UnmanagedForest", "ProtectedUnmanagedForest" } }, // 3. NDBPFT, Needleleaf deciduous boreal tree
-     { 4, { "Forest", "UnmanagedForest", "ProtectedUnmanagedForest", "OilPalmTree", "biomassTree", "OilCropTree", "MiscCropTree" } }, // 4. BETPFT, Broadleaf evergreen tropical tree
-     { 5, { "Forest", "UnmanagedForest", "ProtectedUnmanagedForest", "biomassTree" } }, // 5. BEMPFT, Broadleaf evergreen temperate tree
-     { 6, { "Forest", "UnmanagedForest", "ProtectedUnmanagedForest", "OilPalmTree", "biomassTree", "OilCropTree", "MiscCropTree" } }, // 6. BDTPFT, Broadleaf deciduous tropical tree
-     { 7, { "Forest", "UnmanagedForest", "ProtectedUnmanagedForest", "biomassTree", "NutsSeedsTree", "FruitsTree" } }, // 7. BDMPFT, Broadleaf deciduous temperate tree
+     { 4, { "Forest", "UnmanagedForest", "ProtectedUnmanagedForest", "OilPalmTree", "OilCropTree", "MiscCropTree" } }, // 4. BETPFT, Broadleaf evergreen tropical tree
+     { 5, { "Forest", "UnmanagedForest", "ProtectedUnmanagedForest" } }, // 5. BEMPFT, Broadleaf evergreen temperate tree
+     { 6, { "Forest", "UnmanagedForest", "ProtectedUnmanagedForest", "OilPalmTree", "OilCropTree", "MiscCropTree" } }, // 6. BDTPFT, Broadleaf deciduous tropical tree
+     { 7, { "Forest", "UnmanagedForest", "ProtectedUnmanagedForest", "NutsSeedsTree", "FruitsTree" } }, // 7. BDMPFT, Broadleaf deciduous temperate tree
      { 8, { "Forest", "UnmanagedForest", "ProtectedUnmanagedForest" } }, // 8. BDBPFT, Broadleaf deciduous boreal tree
      { 9, { "Shrubland", "ProtectedShrubland" } }, // 9. SEMPFT, Broadleaf evergreen temperate shrub
      { 10, { "Shrubland", "ProtectedShrubland" } }, // 10. SDMPFT, Broadleaf deciduous temperate shrub
      { 11, { "Shrubland", "ProtectedShrubland" } }, // 11. SDBPFT, Broadleaf deciduous boreal shrub
-     { 12, { "Grassland", "ProtectedGrassland", "Tundra", "Pasture", "UnmanagedPasture", "ProtectedUnmanagedPasture", "FodderGrass"} }, // 12. GA3PFT, C3 arctic grass
-     { 13, { "Grassland", "ProtectedGrassland", "Pasture", "UnmanagedPasture", "ProtectedUnmanagedPasture", "FodderGrass" } }, // 13. GC3PFT, C3 non-arctic grass
-     { 14, { "Grassland", "ProtectedGrassland", "Pasture", "UnmanagedPasture", "ProtectedUnmanagedPasture", "FodderGrass", "biomassGrass", "CornC4", "SugarCropC4", "MiscCropC4", "OtherGrainC4", "FodderHerbC4" } }, // 14. GC4PFT, C4 grass
-     { 15, { "Rice","Wheat", "MiscCrop", "NutsSeeds", "OtherGrain", "OilCrop", "FiberCrop", "FodderHerb", "RootTuber", "OtherArableLand", "Fruits", "Legumes", "Soybean", "SugarCrop", "Vegetables" } }, // 15. CPFT, Cropland
-     { 16, {  } } // 16. NA
+     { 12, { "Grassland", "ProtectedGrassland", "Tundra", "Pasture", "UnmanagedPasture", "ProtectedUnmanagedPasture"} }, // 12. GA3PFT, C3 arctic grass
+     { 13, { "Grassland", "ProtectedGrassland", "Pasture", "UnmanagedPasture", "ProtectedUnmanagedPasture"} }, // 13. GC3PFT, C3 non-arctic grass
+     { 14, { "Grassland", "ProtectedGrassland", "Pasture", "UnmanagedPasture", "ProtectedUnmanagedPasture", "CornC4", "SugarCropC4", "MiscCropC4", "OtherGrainC4", "FodderHerbC4" } }, // 14. GC4PFT, C4 grass
+     { 15, { "MiscCrop", "NutsSeeds", "OtherArableLand", "Fruits", "Vegetables" } }, // 15. c3_crop (generic rainfed catch-all)
+     { 16, { "MiscCrop", "NutsSeeds", "OtherArableLand", "Fruits", "Vegetables" } }, // 16. c3_irrigated (generic irrigated catch-all)
+     { 17, { "CornC4" } },                                    // 17. corn (rainfed)
+     { 18, { "CornC4" } },                                    // 18. irrigated_corn
+     { 19, { "Wheat", "OtherGrain" } },                       // 19. spring_temperate_cereal (rainfed)
+     { 20, { "Wheat", "OtherGrain" } },                       // 20. irrigated_spring_temperate_cereal
+     { 21, { "Wheat" } },                                     // 21. winter_temperate_cereal (rainfed)
+     { 22, { "Wheat" } },                                     // 22. irrigated_winter_temperate_cereal
+     { 23, { "Soybean", "Legumes" } },                        // 23. soybean (rainfed)
+     { 24, { "Soybean", "Legumes" } },                        // 24. irrigated_soybean
+     { 25, { "RootTuber" } },                                 // 25. cassava (rainfed)
+     { 26, { "RootTuber" } },                                 // 26. irrigated_cassava
+     { 27, { "FiberCrop" } },                                 // 27. cotton (rainfed)
+     { 28, { "FiberCrop" } },                                 // 28. irrigated_cotton
+     { 29, { "FodderGrass", "FodderHerb", "FodderHerbC4" } }, // 29. foddergrass (rainfed)
+     { 30, { "FodderGrass", "FodderHerb", "FodderHerbC4" } }, // 30. irrigated_foddergrass
+     { 31, { "OilPalmTree" } },                               // 31. oilpalm (rainfed)
+     { 32, { "OilPalmTree" } },                               // 32. irrigated_oilpalm
+     { 33, { "OtherGrain", "OtherGrainC4" } },                // 33. other_grains (rainfed)
+     { 34, { "OtherGrain", "OtherGrainC4" } },                // 34. irrigated_other_grains
+     { 35, { "OilCrop", "OilCropTree" } },                    // 35. rapeseed (rainfed)
+     { 36, { "OilCrop", "OilCropTree" } },                    // 36. irrigated_rapeseed
+     { 37, { "Rice" } },                                      // 37. rice (rainfed)
+     { 38, { "Rice" } },                                      // 38. irrigated_rice
+     { 39, { "RootTuber" } },                                 // 39. root_tubers (rainfed)
+     { 40, { "RootTuber" } },                                 // 40. irrigated_root_tubers
+     { 41, { "SugarCrop", "SugarCropC4" } },                  // 41. sugarcane (rainfed)
+     { 42, { "SugarCrop", "SugarCropC4" } },                  // 42. irrigated_sugarcane
+     { 43, { "biomassGrass" } },                              // 43. miscanthus (rainfed)
+     { 44, { "biomassGrass" } },                              // 44. irrigated_miscanthus
+     { 45, { "biomassGrass" } },                              // 45. switchgrass (rainfed)
+     { 46, { "biomassGrass" } },                              // 46. irrigated_switchgrass
+     { 47, { "biomassTree" } },                               // 47. poplar (rainfed)
+     { 48, { "biomassTree" } },                               // 48. irrigated_poplar
+     { 49, { "biomassTree" } },                               // 49. willow (rainfed)
+     { 50, { "biomassTree" } }                                // 50. irrigated_willow
     };
 };
 

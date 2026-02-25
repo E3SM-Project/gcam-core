@@ -276,6 +276,9 @@ void CarbonScalers::calcScalers(int aGCAMYear, double *aELMArea, double *aELMPFT
  
                         // Find current PFT in the PFT2Crop map
                         auto currPFT = mPFT2GCAMCropMap.find( pft );
+                        if (currPFT == mPFT2GCAMCropMap.end()) {
+                            continue;  // PFT not in mapping, skip
+                        }
                         vector<string> cropsInPFT = (*currPFT).second;
                         
                         // Then add the npp and area for both current and base periods to the region/crop totals

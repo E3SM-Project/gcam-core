@@ -134,7 +134,7 @@ int main( ) {
     int* NUM_LAT = &numLat; // Number of horizontal grid cells
     int numLon = 288;
     int* NUM_LON = &numLon; // Number of vertical grid cells
-    int numPFT = 17;
+    int numPFT = 51;
     int* NUM_PFT = &numPFT; // Number of PFTs in ELM
     int numHARV = 5;
     int* NUM_HARVEST = &numHARV; // Number of harvest cats in ELM
@@ -142,7 +142,7 @@ int main( ) {
     int* NUM_GCAM_ENERGY_REGIONS = &numGEReg;
     int numGLReg = 392;
     int* NUM_GCAM_LAND_REGIONS = &numGLReg;
-    int numLT = 9;
+    int numLT = 36;
     int* NUM_EHC2ELM_LANDTYPES = &numLT;
     int numES = 3;
     int* NUM_EMISS_SECTORS = &numES;
