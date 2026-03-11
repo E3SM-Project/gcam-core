@@ -258,8 +258,9 @@ void DegreeDays::readRegionalMappingData(const std::string &aFileName)
  * \note Ocean cells (not in mRegionMapping) are automatically skipped
  * 
  */
-void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *aELMArea, const double *aELMHDD, const double *aELMCDD, const double *aELMPopDensity,
-    std::vector<int> &aYears, std::vector<std::string> &aRegions, std::vector<double> &aHDDVector, std::vector<double> &aCDDVector, int &aNumValues) 
+void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD, const double *const aELMCDD, 
+    const double *const aELMPopDensity, std::vector<int> &aYears, std::vector<std::string> &aRegions, std::vector<double> &aHDDVector, 
+    std::vector<double> &aCDDVector, int &aNumValues) 
 {
     // TODO: Generate any diagnostic files or exclude outliers? Probably not necessary or relevant for degree days, but can add if desired
 
@@ -319,9 +320,9 @@ void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *aELMArea
     std::map<std::string, double> aCDDMap;
    
     // Calculate the population-weighted average HDD and CDD for each region, and then add these entries to the maps accordingly
-    for(const auto &pair : totalPopulation) 
+    for (const auto &pair : totalPopulation) 
     {
-        const std::string regID = pair.first;
+        const std::string &regID = pair.first;
         const double population = pair.second;
         
         // Calculate average HDD and average CDD for each region as the total HDD or CDD divided by the total population. 
@@ -389,7 +390,7 @@ void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *aELMArea
  * 
  * **Difference from CarbonScalers:**
  * 
- * Unlike CarbonScalers which splits region IDs like "USA.Northwest" into "USA" and 
+ * Unlike CarbonScalers, which splits region IDs like "USA.Northwest" into "USA" and 
  * "Northwest_Wheat", this method assumes region IDs have no subregions. The regID
  * from the map is used directly as the region name without parsing.
  * 
@@ -405,7 +406,7 @@ void DegreeDays::createDegreeDayVectors(const int aGCAMYear, std::vector<int> &a
     aCDDVector.clear();
 
     // Loop through the map and create the vectors
-    for(const auto &pair : aHDDMap) 
+    for (const auto &pair : aHDDMap) 
     {
         const std::string &regID = pair.first;
         aHDDVector.push_back(pair.second);
@@ -472,7 +473,8 @@ void DegreeDays::writeDegreeDays(const std::string &aFileName, const std::vector
     oFile << "Year" << ",Region" << ",HDD" << ",CDD" << std::endl;
 
     // Loop through the vectors and write each entry to the file. Note that the same index across all vectors corresponds to the same region
-    for(int i = 0; i < aLength; i++) {
+    for (int i = 0; i < aLength; i++) 
+    {
         oFile << aYears[i] << "," << aRegions[i] << "," << aHDDVector[i] << "," << aCDDVector[i] << std::endl;
     }
     oFile.close();
