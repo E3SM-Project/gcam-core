@@ -1,0 +1,580 @@
+/*
+ * LEGAL NOTICE
+ * This computer software was prepared by Battelle Memorial Institute,
+ * hereinafter the Contractor, under Contract No. DE-AC05-76RL0 1830
+ * with the Department of Energy (DOE). NEITHER THE GOVERNMENT NOR THE
+ * CONTRACTOR MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
+ * LIABILITY FOR THE USE OF THIS SOFTWARE. This notice including this
+ * sentence must appear on any copies of this computer software.
+ *
+ * EXPORT CONTROL
+ * User agrees that the Software will not be shipped, transferred or
+ * exported into any country or used in any manner prohibited by the
+ * United States Export Administration Act or any other applicable
+ * export laws, restrictions or regulations (collectively the "Export Laws").
+ * Export of the Software may require some form of license or other
+ * authority from the U.S. Government, and failure to obtain such
+ * export control license may result in criminal liability under
+ * U.S. laws. In addition, if the Software is identified as export controlled
+ * items under the Export Laws, User represents and warrants that User
+ * is not a citizen, or otherwise located within, an embargoed nation
+ * (including without limitation Iran, Syria, Sudan, Cuba, and North Korea)
+ *     and that User is not otherwise prohibited
+ * under the Export Laws from receiving the Software.
+ *
+ * Copyright 2011 Battelle Memorial Institute.  All Rights Reserved.
+ * Distributed as open-source under the terms of the Educational Community
+ * License version 2.0 (ECL 2.0). http://www.opensource.org/licenses/ecl2.php
+ *
+ * For further details, see: http://www.globalchange.umd.edu/models/gcam/
+ *
+ */
+
+/*!
+ * \file degree_days.cpp
+ * \brief This file aggregates gridded data on heating and cooling degree days from E3SM into region-specific averages for GCAM
+ *
+ * \author Philip Myint
+ */
+
+#include "../include/degree_days.h"
+
+// Constructor
+DegreeDays::DegreeDays(const int aNumLon, const int aNumLat, const bool aReadSubregions):
+ASpatialData(aNumLon * aNumLat),
+mNumLon(aNumLon),
+mNumLat(aNumLat),
+mReadSubregions(aReadSubregions)
+{
+}
+
+// Destructor (could just use the default destructor since there are no dynamically allocated raw pointers, 
+// but including an explicit destructor in case we want to add any cleanup code in the future)
+DegreeDays::~DegreeDays() 
+{
+}
+
+/*!
+ * \brief Read regional mapping data from CSV file
+ * 
+ * Reads a CSV file that maps E3SM grid cells to GCAM regions. Each grid cell can map to 
+ * one or more GCAM regions (for cells that straddle regional boundaries), with fractional 
+ * weights indicating what portion of the cell belongs to each region.
+ * 
+ * \param aFileName Path to the regional mapping CSV file
+ * 
+ * \details
+ * **CSV File Format:**
+ * The input file must be a comma-separated file with a header row (skipped) and the following columns:
+ * - Column 1: Region ID (skipped)
+ * - Column 2: GLU ID (skipped)
+ * - Column 3: Longitude index (integer)
+ * - Column 4: Latitude index (integer)
+ * - Column 5: Region name (string, may include quotes)
+ * - Column 6: Subregion name (string, may include quotes)
+ * - Column 7: Weight (double, 0.0 to 1.0)
+ * 
+ * **Example CSV:**
+ * \code
+ * region_id,glu_id,lon,lat,region,subregion,weight
+ * 1,1,144,96,"USA","Northwest",1.0
+ * 2,2,144,97,"USA","Northwest",0.6
+ * 2,2,144,97,"Canada","BritishColumbia",0.4
+ * \endcode
+ * 
+ * **Data Structures Populated:**
+ * 
+ * 1. `mRegionMapping`: Maps grid cell ID to list of regions
+ *    - Key: "lon_lat" (e.g., "144_96")
+ *    - Value: Vector of region IDs (e.g., ["USA.Northwest", "Canada.BritishColumbia"])
+ *    - A grid cell may map to multiple regions if it straddles a boundary
+ * 
+ * 2. `mRegionWeights`: Maps (grid cell, region) pair to fractional weight
+ *    - Key: pair<string, string> (gridID, regionID)
+ *    - Value: double (0.0 to 1.0) representing fraction of cell in that region
+ *    - Weights for a single grid cell across all regions should sum to 1.0
+ * 
+ */
+// TODO: Move this as a member method into ASpatialData (does not need to be virtual since it is not expected to be overridden) and have
+// all subclasses (ASpatialData, CarbonScalers, EmissDownscale, DegreeDays) use this method to read in the regional mapping data since they all need to do this.
+// If this method is moved to ASpatialData, then the region mapping and weights data structures should also be moved to ASpatialData
+void DegreeDays::readRegionalMappingData(const std::string &aFileName) 
+{
+    // Open the file and check that it opened successfully
+    std::ifstream data(aFileName);
+    if (!data.is_open())
+    {
+        exit(EXIT_FAILURE);
+    }
+    std::string line;
+    // Skip the first line (i.e., the header)
+    std::getline(data, line); 
+
+    // Read each line of the file one by one
+    while (std::getline(data, line))
+    {
+        std::istringstream iss(line);
+        std::string token;
+        int lon;
+        int lat;
+        std::string region;
+        std::string subregion;
+        double weight;
+            
+        // Skip region & GLU ID
+        std::getline(iss, token, ',');
+        std::getline(iss, token, ',');
+        
+        // Parse longitude
+        std::getline(iss, token, ',');
+        lon = std::stoi(token);
+        
+        // Parse latitude
+        std::getline(iss, token, ',');
+        lat = std::stoi(token);
+        
+        // Example gridID: "144_96", where 144 is the longitude index and 96 is the latitude index
+        std::string gridID = std::to_string(lon) + "_" + std::to_string(lat);
+        
+        // Parse Region ID
+        std::getline(iss, token, ',');
+        region = token;
+        // Remove quotes from region name, if they exist. TODO: Also remove spaces?
+        region.erase( remove( region.begin(), region.end(), '\"' ), region.end() );
+        
+        std::string regID;
+        if (mReadSubregions)
+        {
+            // Parse Subregion ID
+            std::getline(iss, token, ',');
+            subregion = token;
+            // Remove quotes from subregion name, if they exist. TODO: Also remove spaces?
+            subregion.erase( remove( subregion.begin(), subregion.end(), '\"' ), subregion.end() );
+
+            // Example region ID: "USA.Northwest", where "USA" is the region and "Northwest" is the subregion (e.g., basin, state, or other sub-regional unit)
+            regID = region + "." + subregion;
+
+            // Add region ID to the mapping vector. Note that there maybe more than one regID per gridID (hence, a vector). If gridID is not found, this will 
+            // automatically create a new vector with this regID as the vector's first element. If gridID is found, this will add to the existing regID vector
+            mRegionMapping[gridID].push_back(regID);
+
+            // Parse weight -- this is the fraction of the grid cell in a particular GCAM region
+            std::getline(iss, token, ',');
+            weight = std::stod(token);
+
+            // If reading subregions, then the key is the specific region-subregion combination (e.g., "USA.Northwest"), 
+            // and it will be unique, so we can just add the entry to the map. This will also create the map entry if it does not already exist
+            mRegionWeights[std::make_pair(gridID, regID)] = weight;
+        }
+        else
+        {
+            // If not reading subregions, then skip reading subregions so that the region ID is just the main region (e.g., "USA")
+            std::getline(iss, token, ',');
+            regID = region;
+
+            // Parse weight -- this is the fraction of the grid cell in a particular GCAM region
+            std::getline(iss, token, ',');
+            weight = std::stod(token);
+
+            // Populate the region mapping and weights maps
+            auto it = mRegionMapping.find(gridID);
+            if (it == mRegionMapping.end())
+            {
+                // If gridID is not found, then create a vector with this regID and add it to the map
+                mRegionMapping[gridID] = std::vector<std::string>{regID};
+
+                // Set the region weight for this grid cell and region combination
+                mRegionWeights[std::make_pair(gridID, regID)] = weight;
+            }
+            else
+            {
+                // If gridID is found, then add to the existing regID vector only if it is not already in the vector (to avoid duplicates when 
+                // subregions are being aggregated to the same parent region)
+                auto &regIDs = it->second;
+                if (std::find(regIDs.begin(), regIDs.end(), regID) == regIDs.end())
+                {
+                    regIDs.push_back(regID);
+                }
+
+                // If regID is not already in the map, the [] operator will create a new map entry with a default value of 0, so we can just add the weight
+                // in both the case where the regID is new or already exists in the map
+                mRegionWeights[std::make_pair(gridID, regID)] += weight;
+            }
+
+        } // if (mReadSubregions)
+
+    } // while (std::getline(data, line))
+}
+
+/*!
+ * \brief Aggregate gridded degree days to regional scale using population weighting
+ * 
+ * This method performs population-weighted averaging of heating and cooling degree days
+ * from E3SM's gridded output to GCAM's regional scale. The weighting ensures that degree
+ * days reflect where people actually live, which is appropriate for energy demand calculations.
+ * 
+ * \param aGCAMYear [INPUT] GCAM year for this data (e.g., 2025, 2050)
+ * \param aELMArea [INPUT] Grid cell areas in km² (mNumLat × mNumLon elements)
+ * \param aELMHDD [INPUT] Heating degree days for each grid cell (mNumLat × mNumLon elements)
+ * \param aELMCDD [INPUT] Cooling degree days for each grid cell (mNumLat × mNumLon elements)
+ * \param aELMPopDensity [INPUT] Population density in people/km² for each grid cell (mNumLat × mNumLon elements)
+ * \param aYears [OUTPUT] Vector of years (one entry per region, all equal to aGCAMYear)
+ * \param aRegions [OUTPUT] Vector of region names (e.g., "USA", "China", "India")
+ * \param aHDDVector [OUTPUT] Vector of population-weighted HDD by region (degree-days)
+ * \param aCDDVector [OUTPUT] Vector of population-weighted CDD by region (degree-days)
+ * \param aNumValues [OUTPUT] Number of regional values written to output vectors
+ * 
+ * \details
+ * **Population-Weighted Aggregation Formula:**
+ * 
+ * For each GCAM region:
+ * \code
+ * HDD_region = Σ(HDD_cell × pop_cell × area_cell) / Σ(pop_cell × area_cell)
+ * CDD_region = Σ(CDD_cell × pop_cell × area_cell) / Σ(pop_cell × area_cell)
+ * 
+ * Where:
+ *   - Sum is over all grid cells (or fractional cells) in the region
+ *   - pop_cell = population_density × area_km²
+ *   - Both area and density are in km² units (no conversion needed)
+ *   - Fractional weights from mRegionWeights handle cells straddling boundaries
+ * \endcode
+ * 
+ * **Handling Edge Cases:**
+ * - Regions with zero population: HDD = CDD = 0
+ * - Negative degree days: Set to 0 (degree days cannot be negative)
+ * - Missing/NaN data: Skipped (not accumulated)
+ * 
+ * \pre mRegionMapping and mRegionWeights must be populated by readRegionalMappingData()
+ * \pre Input arrays must have mNumLat × mNumLon elements
+ * \pre aELMArea values must be positive (km²)
+ * \pre aELMPopDensity values must be non-negative (people/km²)
+ * 
+ * \post Output vectors contain one entry per region with non-zero population
+ * \post aNumValues equals the number of regions processed
+ * \post All HDD and CDD values are non-negative (sanity check)
+ * 
+ * \note This method does not filter outliers (unlike CarbonScalers) because extreme
+ *       degree day values are legitimate (Arctic winters, desert summers)
+ * \note Ocean cells (not in mRegionMapping) are automatically skipped
+ * 
+ */
+void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *aELMArea, const double *aELMHDD, const double *aELMCDD, const double *aELMPopDensity,
+    std::vector<int> &aYears, std::vector<std::string> &aRegions, std::vector<double> &aHDDVector, std::vector<double> &aCDDVector, int &aNumValues) 
+{
+    // TODO: Generate any diagnostic files or exclude outliers? Probably not necessary or relevant for degree days, but can add if desired
+
+    // Create mappings to store intermediate information
+    std::map<std::string, double> totalPopulation;
+    std::map<std::string, double> totalHDD;
+    std::map<std::string, double> totalCDD;
+    
+    // Note: E3SM data will have longitude moving fastest, then latitude, so loop so have longitude is the inner loop and latitude is the outer loop
+    int gridIndex; 
+
+    // Weight that indicates an area- and fraction-weighted population of the grid cell for a particular region. 
+    // This is used to weight the degree days when aggregating to the regional level
+    double popWeight = 0.0; 
+
+    for (int k = 1; k <= mNumLat; k++) 
+    {
+        for (int j = 1; j <= mNumLon; j++) 
+        {
+            gridIndex = (k - 1) * mNumLon + (j - 1);
+
+            // Get the gridID for this grid cell based on the longitude and latitude indices
+            std::string gridID = std::to_string(j) + "_" + std::to_string(k);
+            
+            auto tempGrid = mRegionMapping.find(gridID);
+            if (tempGrid == mRegionMapping.end()) 
+            {
+                // Grid isn't found in the mapping. Currently, this probably means it is an ocean grid.
+                // TODO: set up loop only over land grids, either using the mRegionMapping or one of the files from ELM (same for carbon scalers)
+            } 
+            else 
+            {
+                // Get the vector of regionIDs for this grid cell
+                const std::vector<std::string> &regInGrd = tempGrid->second;
+
+                // Loop over all regions this grid is mapped to and calculate the scalars
+                for (const auto &regID : regInGrd) 
+                {
+                    // Calculate the population weight for this grid cell and region combination as the product of the fraction of the grid cell in this region (from the mapping file), 
+                    // the area of the grid cell, and the population density of the grid cell. This weight will be used to weight the degree days when aggregating to the regional level
+                    popWeight = mRegionWeights[std::make_pair(gridID, regID)] * aELMArea[gridIndex] * aELMPopDensity[gridIndex]; 
+
+                    totalPopulation[regID] += popWeight;
+                    totalHDD[regID] += aELMHDD[gridIndex] * popWeight;
+                    totalCDD[regID] += aELMCDD[gridIndex] * popWeight;
+
+                } // for (auto regID : regInGrd) 
+
+            } // if (tempGrid == mRegionMapping.end()) 
+
+        } // for (int j = 1; j <= mNumLon; j++)
+
+    } // (int k = 1; k <= mNumLat; k++)
+
+    // Create maps to store information on HDD and CDD by region, which will be used to create the output vectors for GCAM
+    std::map<std::string, double> aHDDMap;
+    std::map<std::string, double> aCDDMap;
+   
+    // Calculate the population-weighted average HDD and CDD for each region, and then add these entries to the maps accordingly
+    for(const auto &pair : totalPopulation) 
+    {
+        const std::string regID = pair.first;
+        const double population = pair.second;
+        
+        // Calculate average HDD and average CDD for each region as the total HDD or CDD divided by the total population. 
+        // If total population is zero, set average HDD and CDD to 0 to avoid division by zero
+        if (population > 0.0) 
+        {
+            // Calculate weighted average: total / population
+            double avgHDD = totalHDD[regID] / population;
+            double avgCDD = totalCDD[regID] / population;
+            
+            // Ensure non-negative (this is a sanity check since negative degree days do not make sense)
+            aHDDMap[regID] = std::max(avgHDD, 0.0);
+            aCDDMap[regID] = std::max(avgCDD, 0.0);
+        } 
+        else 
+        {
+            // Set HDD and CDD to zero for this region if population is zero
+            aHDDMap[regID] = 0.0;
+            aCDDMap[regID] = 0.0;
+        }
+    } // for (const auto &pair : totalPopulation)
+    
+    // Create output vectors for GCAM. Loop through the maps and create the vectors as needed
+    createDegreeDayVectors(aGCAMYear, aYears, aRegions, aHDDVector, aCDDVector, aHDDMap, aCDDMap);
+
+    // Set the number of actual records, which is the same for both HDD and CDD, based on total population > 0
+    aNumValues = static_cast<int>(aHDDMap.size());
+}
+
+
+/*!
+ * \brief Convert map structures to parallel vectors for GCAM interface
+ * 
+ * This helper method packages degree day data from map structures (used for efficient
+ * aggregation) into parallel vectors (required by GCAM's interface). The output vectors
+ * are organized such that the same index across all vectors represents data for one region.
+ * 
+ * \param aGCAMYear [INPUT] GCAM year to assign to all entries
+ * \param aYears [OUTPUT] Vector of years (all entries equal to aGCAMYear)
+ * \param aRegions [OUTPUT] Vector of region names extracted from map keys
+ * \param aHDDVector [OUTPUT] Vector of HDD values in same order as aRegions
+ * \param aCDDVector [OUTPUT] Vector of CDD values in same order as aRegions
+ * \param aHDDMap [INPUT] Map of region name → HDD value
+ * \param aCDDMap [INPUT] Map of region name → CDD value
+ * 
+ * \details
+ * 
+ * **Output Vector Structure (Parallel Vectors):**
+ * \code
+ * Index:       0         1          2
+ * aYears:     [2050,    2050,      2050]
+ * aRegions:   ["USA",   "China",   "India"]
+ * aHDDVector: [2845.3,  3421.9,    456.8]
+ * aCDDVector: [1234.6,  987.7,     2345.7]
+ * \endcode
+ * 
+ * **Parallel Vector Concept:**
+ * 
+ * All vectors have the same length, and index `i` across all vectors represents the
+ * complete data for region `i`:
+ * - `aYears[i]` = year for region i
+ * - `aRegions[i]` = name of region i  
+ * - `aHDDVector[i]` = HDD for region i
+ * - `aCDDVector[i]` = CDD for region i
+ * 
+ * **Difference from CarbonScalers:**
+ * 
+ * Unlike CarbonScalers which splits region IDs like "USA.Northwest" into "USA" and 
+ * "Northwest_Wheat", this method assumes region IDs have no subregions. The regID
+ * from the map is used directly as the region name without parsing.
+ * 
+ */
+void DegreeDays::createDegreeDayVectors(const int aGCAMYear, std::vector<int> &aYears, std::vector<std::string> &aRegions, 
+    std::vector<double> &aHDDVector, std::vector<double> &aCDDVector, const std::map<std::string, double> &aHDDMap, 
+    const std::map<std::string, double> &aCDDMap) 
+{
+    // Clear the vectors first to ensure they are empty before adding data
+    aYears.clear();
+    aRegions.clear();
+    aHDDVector.clear();
+    aCDDVector.clear();
+
+    // Loop through the map and create the vectors
+    for(const auto &pair : aHDDMap) 
+    {
+        const std::string &regID = pair.first;
+        aHDDVector.push_back(pair.second);
+        aCDDVector.push_back(aCDDMap.at(regID));
+        
+        aYears.push_back(aGCAMYear);
+
+        // Note: This assumes there is no subregion in regID, unlike the case of carbon scalars where the regID includes both region and subregion 
+        aRegions.push_back(regID);
+    }
+}
+
+/*!
+ * \brief Write degree day data to CSV file
+ * 
+ * Writes regional degree day data to a comma-separated values (CSV) file with maximum
+ * precision to ensure exact round-trip conversion between binary and text representations.
+ * This is important for reproducibility and restart capabilities.
+ * 
+ * \param aFileName [INPUT] Path to output CSV file (will be created/overwritten)
+ * \param aYears [INPUT] Vector of years (parallel to other vectors)
+ * \param aRegions [INPUT] Vector of region names (parallel to other vectors)
+ * \param aHDDVector [INPUT] Vector of heating degree days by region
+ * \param aCDDVector [INPUT] Vector of cooling degree days by region
+ * \param aLength [INPUT] Number of entries to write (should be ≤ vector sizes)
+ * 
+ * \details
+ * **CSV Output Format:**
+ * \code
+ * Year,Region,HDD,CDD
+ * 2050,USA,2845.342145678901234,1234.567890123456
+ * 2050,China,3421.876543210987,987.6543210987654
+ * 2050,India,456.7890123456789,2345.678901234567
+ * \endcode
+ * 
+ * **Precision Handling:**
+ * 
+ * The file is written with `std::numeric_limits<double>::max_digits10` precision
+ * (typically 17 decimal digits for double). This ensures that:
+ * - Values can be read back in exactly as they were written
+ * - No precision is lost in the round-trip (binary → text → binary)
+ * - Results are reproducible across different systems
+ * 
+ * **Column Descriptions:**
+ * - **Year**: GCAM year (integer, e.g., 2020, 2025, 2050)
+ * - **Region**: GCAM region name (string, e.g., "USA", "China", "India")
+ * - **HDD**: Heating degree days (double, degree-days)
+ * - **CDD**: Cooling degree days (double, degree-days)
+ *
+ */
+void DegreeDays::writeDegreeDays(const std::string &aFileName, const std::vector<int> &aYears, const std::vector<std::string> &aRegions, 
+    const std::vector<double> &aHDDVector, const std::vector<double> &aCDDVector, const int aLength) 
+{
+    std::ofstream oFile;
+    oFile.open(aFileName);
+    if (!oFile.is_open())
+    {
+        exit(EXIT_FAILURE);
+    }
+    // Write scalars to max precision for exact conversion between binary and text
+    oFile << std::fixed << std::setprecision(std::numeric_limits<double>::max_digits10);
+
+    // Include a header line
+    oFile << "Year" << ",Region" << ",HDD" << ",CDD" << std::endl;
+
+    // Loop through the vectors and write each entry to the file. Note that the same index across all vectors corresponds to the same region
+    for(int i = 0; i < aLength; i++) {
+        oFile << aYears[i] << "," << aRegions[i] << "," << aHDDVector[i] << "," << aCDDVector[i] << std::endl;
+    }
+    oFile.close();
+}
+
+/*!
+ * \brief Read degree day data from CSV file
+ * 
+ * Reads regional degree day data from a comma-separated values (CSV) file and populates
+ * parallel vectors with the data. This is the complement to writeDegreeDays() and can
+ * read files created by that method or similarly formatted CSV files.
+ * 
+ * \param aFileName [INPUT] Path to input CSV file to read
+ * \param aYears [OUTPUT] Vector of years (cleared then populated)
+ * \param aRegions [OUTPUT] Vector of region names (cleared then populated)
+ * \param aHDDVector [OUTPUT] Vector of heating degree days (cleared then populated)
+ * \param aCDDVector [OUTPUT] Vector of cooling degree days (cleared then populated)
+ * 
+ * \return Number of data rows successfully read (equal to vector sizes)
+ * 
+ * \details
+ * **Expected CSV Input Format:**
+ * \code
+ * Year,Region,HDD,CDD
+ * 2050,USA,2845.342145678901234,1234.567890123456
+ * 2050,China,3421.876543210987,987.6543210987654
+ * 2050,India,456.7890123456789,2345.678901234567
+ * \endcode
+ * 
+ * **Column Descriptions:**
+ * - **Column 1**: Year (integer, e.g., 2020, 2025, 2050)
+ * - **Column 2**: Region name (string, e.g., "USA", "China", "India")
+ * - **Column 3**: Heating degree days (double, degree-days)
+ * - **Column 4**: Cooling degree days (double, degree-days)
+ * 
+ * **File Processing:**
+ * 
+ * The method:
+ * 1. Clears all output vectors to ensure clean state
+ * 2. Skips the header row (first line)
+ * 3. Reads each data row and parses the 4 comma-separated fields
+ * 4. Appends parsed values to corresponding vectors
+ * 5. Returns the count of rows read
+ * 
+ * **Use Cases:**
+ * - Read baseline degree day data for initialization
+ * - Load degree day data from previous runs for restart
+ * - Import degree day data from external sources
+ * - Read archived degree day data for comparison
+ * 
+ * **Error Handling:**
+ * - If file cannot be opened: exits program with EXIT_FAILURE
+ * - No validation of data values (assumes well-formed CSV)
+ * - No checking for missing or extra columns
+ * 
+ */
+int DegreeDays::readDegreeDays(const std::string &aFileName, std::vector<int> &aYears, std::vector<std::string> &aRegions, 
+    std::vector<double> &aHDDVector, std::vector<double> &aCDDVector) 
+{
+    std::ifstream data(aFileName);
+    if (!data.is_open())
+    {
+        exit(EXIT_FAILURE);
+    }
+    std::string line;
+    // Skip the first line (i.e., the header)
+    std::getline(data, line); 
+
+    // Clear the vectors first to ensure they are empty before adding data
+    aYears.clear();
+    aRegions.clear();
+    aHDDVector.clear();
+    aCDDVector.clear();
+
+    while (std::getline(data, line))
+    {
+        std::istringstream iss(line);
+        std::string token;
+        int year;
+        std::string region;
+        double averageHDD;
+        double averageCDD;
+        
+        // Parse current year
+        std::getline(iss, token, ',');
+        year = std::stoi(token);
+        
+        // Parse region
+        std::getline(iss, region, ',');
+        
+        // Parse average HDD
+        std::getline(iss, token, ',');
+        averageHDD = std::stod(token);
+
+        // Parse average CDD
+        std::getline(iss, token, ',');
+        averageCDD = std::stod(token);
+        
+        aYears.push_back(year);
+        aRegions.push_back(region);
+        aHDDVector.push_back(averageHDD);
+        aCDDVector.push_back(averageCDD);       
+    }
+    return static_cast<int>(aYears.size());
+}
