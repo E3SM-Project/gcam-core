@@ -54,8 +54,8 @@ class DegreeDays : public ASpatialData
 
         void readRegionalMappingData(const std::string &aFileName);
 
-        void aggregateDegreeDays(const int aGCAMYear, const double *aELMArea, const double *aELMHDD, const double *aELMCDD, 
-            const double *aELMPopDensity, std::vector<int> &aYears, std::vector<std::string> &aRegions, 
+        void aggregateDegreeDays(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD, const double *const aELMCDD, 
+            const double *const aELMPopDensity, std::vector<int> &aYears, std::vector<std::string> &aRegions, 
             std::vector<double> &aHDDVector, std::vector<double> &aCDDVector, int &aNumValues);
 
         void createDegreeDayVectors(const int aGCAMYear, std::vector<int> &aYears, std::vector<std::string> &aRegions,
