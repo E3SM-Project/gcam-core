@@ -215,13 +215,12 @@ void DegreeDays::readRegionalMappingData(const std::string &aFileName)
  * 
  * \param aGCAMYear [INPUT] GCAM year for this data (e.g., 2025, 2050)
  * \param aELMArea [INPUT] Grid cell areas in km² (mNumLat × mNumLon elements)
- * \param aELMHDD [INPUT] Heating degree days for each grid cell (mNumLat × mNumLon elements)
- * \param aELMCDD [INPUT] Cooling degree days for each grid cell (mNumLat × mNumLon elements)
- * \param aELMPopDensity [INPUT] Population density in people/km² for each grid cell (mNumLat × mNumLon elements)
+ * \param aELMDegreeDays [INPUT] Degree days for each grid cell (mNumLat × mNumLon elements)
+ * \param aPopDensity [INPUT] Population density in people/km² for each grid cell (mNumLat × mNumLon elements)
+ * \param aELMLandFrac [INPUT] Land fraction for each grid cell (mNumLat × mNumLon elements, values between 0 and 1)
  * \param aYears [OUTPUT] Vector of years (one entry per region, all equal to aGCAMYear)
  * \param aRegions [OUTPUT] Vector of region names (e.g., "USA", "China", "India")
- * \param aHDDVector [OUTPUT] Vector of population-weighted HDD by region (degree-days)
- * \param aCDDVector [OUTPUT] Vector of population-weighted CDD by region (degree-days)
+ * \param aDegreeDaysVector [OUTPUT] Vector of population-weighted degree days by region (degree-days)
  * \param aNumValues [OUTPUT] Number of regional values written to output vectors
  * 
  * \details
@@ -229,8 +228,7 @@ void DegreeDays::readRegionalMappingData(const std::string &aFileName)
  * 
  * For each GCAM region:
  * \code
- * HDD_region = Σ(HDD_cell × pop_cell × area_cell) / Σ(pop_cell × area_cell)
- * CDD_region = Σ(CDD_cell × pop_cell × area_cell) / Σ(pop_cell × area_cell)
+ * DD_region = Σ(DD_cell × pop_cell × area_cell) / Σ(pop_cell × area_cell)
  * 
  * Where:
  *   - Sum is over all grid cells (or fractional cells) in the region
@@ -240,34 +238,31 @@ void DegreeDays::readRegionalMappingData(const std::string &aFileName)
  * \endcode
  * 
  * **Handling Edge Cases:**
- * - Regions with zero population: HDD = CDD = 0
- * - Negative degree days: Set to 0 (degree days cannot be negative)
+ * - Regions with zero population: DegreeDays = 0 
  * - Missing/NaN data: Skipped (not accumulated)
  * 
  * \pre mRegionMapping and mRegionWeights must be populated by readRegionalMappingData()
  * \pre Input arrays must have mNumLat × mNumLon elements
  * \pre aELMArea values must be positive (km²)
- * \pre aELMPopDensity values must be non-negative (people/km²)
+ * \pre aPopDensity values must be non-negative (people/km²)
  * 
  * \post Output vectors contain one entry per region with non-zero population
  * \post aNumValues equals the number of regions processed
- * \post All HDD and CDD values are non-negative (sanity check)
  * 
  * \note This method does not filter outliers (unlike CarbonScalers) because extreme
  *       degree day values are legitimate (Arctic winters, desert summers)
  * \note Ocean cells (not in mRegionMapping) are automatically skipped
  * 
  */
-void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD, const double *const aELMCDD, 
-    const double *const aELMPopDensity, std::vector<int> &aYears, std::vector<std::string> &aRegions, std::vector<double> &aHDDVector, 
-    std::vector<double> &aCDDVector, int &aNumValues) 
+void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aELMArea, const double *const aELMDegreeDays, 
+    const double *const aPopDensity, const double *const aELMLandFrac, std::vector<int> &aYears, std::vector<std::string> &aRegions, 
+    std::vector<double> &aDegreeDaysVector, int &aNumValues) 
 {
     // TODO: Generate any diagnostic files or exclude outliers? Probably not necessary or relevant for degree days, but can add if desired
 
     // Create mappings to store intermediate information
     std::map<std::string, double> totalPopulation;
-    std::map<std::string, double> totalHDD;
-    std::map<std::string, double> totalCDD;
+    std::map<std::string, double> totalDegreeDays;
     
     // Note: E3SM data will have longitude moving fastest, then latitude, so loop so have longitude is the inner loop and latitude is the outer loop
     int gridIndex; 
@@ -300,12 +295,12 @@ void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aE
                 for (const auto &regID : regInGrd) 
                 {
                     // Calculate the population weight for this grid cell and region combination as the product of the fraction of the grid cell in this region (from the mapping file), 
-                    // the area of the grid cell, and the population density of the grid cell. This weight will be used to weight the degree days when aggregating to the regional level
-                    popWeight = mRegionWeights[std::make_pair(gridID, regID)] * aELMArea[gridIndex] * aELMPopDensity[gridIndex]; 
+                    // the area of the grid cell, the population density of the grid cell, and the fraction of the grid cell that is actually land. 
+                    // This weight will be used to weight the degree days when aggregating to the regional level
+                    popWeight = mRegionWeights[std::make_pair(gridID, regID)] * aELMArea[gridIndex] * aPopDensity[gridIndex] * aELMLandFrac[gridIndex]; 
 
                     totalPopulation[regID] += popWeight;
-                    totalHDD[regID] += aELMHDD[gridIndex] * popWeight;
-                    totalCDD[regID] += aELMCDD[gridIndex] * popWeight;
+                    totalDegreeDays[regID] += aELMDegreeDays[gridIndex] * popWeight;
 
                 } // for (auto regID : regInGrd) 
 
@@ -315,41 +310,34 @@ void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aE
 
     } // (int k = 1; k <= mNumLat; k++)
 
-    // Create maps to store information on HDD and CDD by region, which will be used to create the output vectors for GCAM
-    std::map<std::string, double> aHDDMap;
-    std::map<std::string, double> aCDDMap;
+    // Create map to store information on degree days by region, which will be used to create the output vectors for GCAM
+    std::map<std::string, double> aDegreeDaysMap;
    
-    // Calculate the population-weighted average HDD and CDD for each region, and then add these entries to the maps accordingly
+    // Calculate the population-weighted average degree days for each region, and then add these entries to the degree days map accordingly
     for (const auto &pair : totalPopulation) 
     {
         const std::string &regID = pair.first;
-        const double population = pair.second;
+        const double totalPopulation = pair.second;
         
-        // Calculate average HDD and average CDD for each region as the total HDD or CDD divided by the total population. 
-        // If total population is zero, set average HDD and CDD to 0 to avoid division by zero
-        if (population > 0.0) 
+        // Calculate average degree days for each region as the total degree days divided by the total population. 
+        // If total population is zero, set average degree days to 0 to avoid division by zero
+        if (totalPopulation > 0.0) 
         {
             // Calculate weighted average: total / population
-            double avgHDD = totalHDD[regID] / population;
-            double avgCDD = totalCDD[regID] / population;
-            
-            // Ensure non-negative (this is a sanity check since negative degree days do not make sense)
-            aHDDMap[regID] = std::max(avgHDD, 0.0);
-            aCDDMap[regID] = std::max(avgCDD, 0.0);
+            aDegreeDaysMap[regID] = totalDegreeDays[regID] / totalPopulation;
         } 
         else 
         {
-            // Set HDD and CDD to zero for this region if population is zero
-            aHDDMap[regID] = 0.0;
-            aCDDMap[regID] = 0.0;
+            // Set degree days to zero for this region if population is zero
+            aDegreeDaysMap[regID] = 0.0;
         }
     } // for (const auto &pair : totalPopulation)
     
     // Create output vectors for GCAM. Loop through the maps and create the vectors as needed
-    createDegreeDayVectors(aGCAMYear, aYears, aRegions, aHDDVector, aCDDVector, aHDDMap, aCDDMap);
+    createDegreeDayVectors(aGCAMYear, aYears, aRegions, aDegreeDaysVector, aDegreeDaysMap);
 
-    // Set the number of actual records, which is the same for both HDD and CDD, based on total population > 0
-    aNumValues = static_cast<int>(aHDDMap.size());
+    // Set the number of actual records, which is the same for both degree days, based on total population > 0
+    aNumValues = static_cast<int>(aDegreeDaysMap.size());
 }
 
 
@@ -363,10 +351,8 @@ void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aE
  * \param aGCAMYear [INPUT] GCAM year to assign to all entries
  * \param aYears [OUTPUT] Vector of years (all entries equal to aGCAMYear)
  * \param aRegions [OUTPUT] Vector of region names extracted from map keys
- * \param aHDDVector [OUTPUT] Vector of HDD values in same order as aRegions
- * \param aCDDVector [OUTPUT] Vector of CDD values in same order as aRegions
- * \param aHDDMap [INPUT] Map of region name → HDD value
- * \param aCDDMap [INPUT] Map of region name → CDD value
+ * \param aDegreeDaysVector [OUTPUT] Vector of degree days in same order as aRegions
+ * \param aDegreeDaysMap [INPUT] Map of region name → degree days value
  * 
  * \details
  * 
@@ -375,8 +361,7 @@ void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aE
  * Index:       0         1          2
  * aYears:     [2050,    2050,      2050]
  * aRegions:   ["USA",   "China",   "India"]
- * aHDDVector: [2845.3,  3421.9,    456.8]
- * aCDDVector: [1234.6,  987.7,     2345.7]
+ * aDegreeDaysVector: [2845.3,  3421.9,    456.8]
  * \endcode
  * 
  * **Parallel Vector Concept:**
@@ -385,8 +370,7 @@ void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aE
  * complete data for region `i`:
  * - `aYears[i]` = year for region i
  * - `aRegions[i]` = name of region i  
- * - `aHDDVector[i]` = HDD for region i
- * - `aCDDVector[i]` = CDD for region i
+ * - `aDegreeDaysVector[i]` = degree days for region i
  * 
  * **Difference from CarbonScalers:**
  * 
@@ -396,21 +380,18 @@ void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aE
  * 
  */
 void DegreeDays::createDegreeDayVectors(const int aGCAMYear, std::vector<int> &aYears, std::vector<std::string> &aRegions, 
-    std::vector<double> &aHDDVector, std::vector<double> &aCDDVector, const std::map<std::string, double> &aHDDMap, 
-    const std::map<std::string, double> &aCDDMap) 
+    std::vector<double> &aDegreeDaysVector, const std::map<std::string, double> &aDegreeDaysMap) 
 {
     // Clear the vectors first to ensure they are empty before adding data
     aYears.clear();
     aRegions.clear();
-    aHDDVector.clear();
-    aCDDVector.clear();
+    aDegreeDaysVector.clear();
 
     // Loop through the map and create the vectors
-    for (const auto &pair : aHDDMap) 
+    for (const auto &pair : aDegreeDaysMap) 
     {
         const std::string &regID = pair.first;
-        aHDDVector.push_back(pair.second);
-        aCDDVector.push_back(aCDDMap.at(regID));
+        aDegreeDaysVector.push_back(pair.second);
         
         aYears.push_back(aGCAMYear);
 
@@ -429,17 +410,16 @@ void DegreeDays::createDegreeDayVectors(const int aGCAMYear, std::vector<int> &a
  * \param aFileName [INPUT] Path to output CSV file (will be created/overwritten)
  * \param aYears [INPUT] Vector of years (parallel to other vectors)
  * \param aRegions [INPUT] Vector of region names (parallel to other vectors)
- * \param aHDDVector [INPUT] Vector of heating degree days by region
- * \param aCDDVector [INPUT] Vector of cooling degree days by region
+ * \param aDegreeDaysVector [INPUT] Vector of degree days by region
  * \param aLength [INPUT] Number of entries to write (should be ≤ vector sizes)
  * 
  * \details
  * **CSV Output Format:**
  * \code
- * Year,Region,HDD,CDD
- * 2050,USA,2845.342145678901234,1234.567890123456
- * 2050,China,3421.876543210987,987.6543210987654
- * 2050,India,456.7890123456789,2345.678901234567
+ * Year,Region,DegreeDays
+ * 2050,USA,2845.342145678901234
+ * 2050,China,3421.876543210987
+ * 2050,India,456.7890123456789
  * \endcode
  * 
  * **Precision Handling:**
@@ -453,12 +433,11 @@ void DegreeDays::createDegreeDayVectors(const int aGCAMYear, std::vector<int> &a
  * **Column Descriptions:**
  * - **Year**: GCAM year (integer, e.g., 2020, 2025, 2050)
  * - **Region**: GCAM region name (string, e.g., "USA", "China", "India")
- * - **HDD**: Heating degree days (double, degree-days)
- * - **CDD**: Cooling degree days (double, degree-days)
+ * - **DegreeDays**: Degree days (double, degree-days)
  *
  */
 void DegreeDays::writeDegreeDays(const std::string &aFileName, const std::vector<int> &aYears, const std::vector<std::string> &aRegions, 
-    const std::vector<double> &aHDDVector, const std::vector<double> &aCDDVector, const int aLength) 
+    const std::vector<double> &aDegreeDaysVector, const int aLength) 
 {
     std::ofstream oFile;
     oFile.open(aFileName);
@@ -470,12 +449,12 @@ void DegreeDays::writeDegreeDays(const std::string &aFileName, const std::vector
     oFile << std::fixed << std::setprecision(std::numeric_limits<double>::max_digits10);
 
     // Include a header line
-    oFile << "Year" << ",Region" << ",HDD" << ",CDD" << std::endl;
+    oFile << "Year" << ",Region" << ",DegreeDays" << std::endl;
 
     // Loop through the vectors and write each entry to the file. Note that the same index across all vectors corresponds to the same region
     for (int i = 0; i < aLength; i++) 
     {
-        oFile << aYears[i] << "," << aRegions[i] << "," << aHDDVector[i] << "," << aCDDVector[i] << std::endl;
+        oFile << aYears[i] << "," << aRegions[i] << "," << aDegreeDaysVector[i] << std::endl;
     }
     oFile.close();
 }
@@ -490,25 +469,23 @@ void DegreeDays::writeDegreeDays(const std::string &aFileName, const std::vector
  * \param aFileName [INPUT] Path to input CSV file to read
  * \param aYears [OUTPUT] Vector of years (cleared then populated)
  * \param aRegions [OUTPUT] Vector of region names (cleared then populated)
- * \param aHDDVector [OUTPUT] Vector of heating degree days (cleared then populated)
- * \param aCDDVector [OUTPUT] Vector of cooling degree days (cleared then populated)
+ * \param aDegreeDaysVector [OUTPUT] Vector of degree days (cleared then populated)
  * 
  * \return Number of data rows successfully read (equal to vector sizes)
  * 
  * \details
  * **Expected CSV Input Format:**
  * \code
- * Year,Region,HDD,CDD
- * 2050,USA,2845.342145678901234,1234.567890123456
- * 2050,China,3421.876543210987,987.6543210987654
- * 2050,India,456.7890123456789,2345.678901234567
+ * Year,Region,DegreeDays
+ * 2050,USA,2845.342145678901234
+ * 2050,China,3421.876543210987
+ * 2050,India,456.7890123456789
  * \endcode
  * 
  * **Column Descriptions:**
  * - **Column 1**: Year (integer, e.g., 2020, 2025, 2050)
  * - **Column 2**: Region name (string, e.g., "USA", "China", "India")
- * - **Column 3**: Heating degree days (double, degree-days)
- * - **Column 4**: Cooling degree days (double, degree-days)
+ * - **Column 3**: Degree days (double, degree-days)
  * 
  * **File Processing:**
  * 
@@ -532,7 +509,7 @@ void DegreeDays::writeDegreeDays(const std::string &aFileName, const std::vector
  * 
  */
 int DegreeDays::readDegreeDays(const std::string &aFileName, std::vector<int> &aYears, std::vector<std::string> &aRegions, 
-    std::vector<double> &aHDDVector, std::vector<double> &aCDDVector) 
+    std::vector<double> &aDegreeDaysVector) 
 {
     std::ifstream data(aFileName);
     if (!data.is_open())
@@ -546,8 +523,7 @@ int DegreeDays::readDegreeDays(const std::string &aFileName, std::vector<int> &a
     // Clear the vectors first to ensure they are empty before adding data
     aYears.clear();
     aRegions.clear();
-    aHDDVector.clear();
-    aCDDVector.clear();
+    aDegreeDaysVector.clear();
 
     while (std::getline(data, line))
     {
@@ -555,8 +531,7 @@ int DegreeDays::readDegreeDays(const std::string &aFileName, std::vector<int> &a
         std::string token;
         int year;
         std::string region;
-        double averageHDD;
-        double averageCDD;
+        double averageDegreeDays;
         
         // Parse current year
         std::getline(iss, token, ',');
@@ -565,18 +540,13 @@ int DegreeDays::readDegreeDays(const std::string &aFileName, std::vector<int> &a
         // Parse region
         std::getline(iss, region, ',');
         
-        // Parse average HDD
+        // Parse average degree days
         std::getline(iss, token, ',');
-        averageHDD = std::stod(token);
-
-        // Parse average CDD
-        std::getline(iss, token, ',');
-        averageCDD = std::stod(token);
+        averageDegreeDays = std::stod(token);
         
         aYears.push_back(year);
         aRegions.push_back(region);
-        aHDDVector.push_back(averageHDD);
-        aCDDVector.push_back(averageCDD);       
+        aDegreeDaysVector.push_back(averageDegreeDays);       
     }
     return static_cast<int>(aYears.size());
 }

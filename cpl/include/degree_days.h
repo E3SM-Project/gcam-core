@@ -54,20 +54,18 @@ class DegreeDays : public ASpatialData
 
         void readRegionalMappingData(const std::string &aFileName);
 
-        void aggregateDegreeDays(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD, const double *const aELMCDD, 
-            const double *const aELMPopDensity, std::vector<int> &aYears, std::vector<std::string> &aRegions, 
-            std::vector<double> &aHDDVector, std::vector<double> &aCDDVector, int &aNumValues);
+        void aggregateDegreeDays(const int aGCAMYear, const double *const aELMArea, const double *const aELMDegreeDays,  
+            const double *const aPopDensity, const double *const aELMLandFrac, std::vector<int> &aYears, std::vector<std::string> &aRegions, 
+            std::vector<double> &aDegreeDaysVector, int &aNumValues);
 
         void createDegreeDayVectors(const int aGCAMYear, std::vector<int> &aYears, std::vector<std::string> &aRegions,
-                            std::vector<double> &aHDDVector, std::vector<double> &aCDDVector,
-                            const std::map<std::string, double> &aHDDMap,
-                            const std::map<std::string, double> &aCDDMap);
+                            std::vector<double> &aDegreeDaysVector, const std::map<std::string, double> &aDegreeDaysMap);
 
         void writeDegreeDays(const std::string &aFileName, const std::vector<int> &aYears, const std::vector<std::string> &aRegions,
-                const std::vector<double> &aHDDVector, const std::vector<double> &aCDDVector, const int aLength);
+                const std::vector<double> &aDegreeDaysVector, const int aLength);
 
         int readDegreeDays(const std::string &aFileName, std::vector<int> &aYears, std::vector<std::string> &aRegions,
-                std::vector<double> &aHDDVector, std::vector<double> &aCDDVector);
+                std::vector<double> &aDegreeDaysVector);
     private:    
         // Boolean indicating whether to read subregions in the mapping file. If false, subregions will be aggregated to their parent regions
         bool mReadSubregions;
