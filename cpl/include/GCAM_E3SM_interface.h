@@ -1,5 +1,5 @@
 /*
-* \author Kate Calvin and Alan Di Vittorio
+* \author Kate Calvin and Alan Di Vittorio and Philip Myint
 */
 
 #include "util/base/include/definitions.h"
@@ -16,6 +16,7 @@
 #include "containers/include/iscenario_runner.h"
 #include "../include/emiss_downscale.h"
 #include "../include/remap_data.h"
+#include "../include/degree_days.h"
 
 // forward declarations
 class Region;
@@ -28,14 +29,22 @@ public:
                   std::string aGCAM2ELMWHMap, std::string aGCAM2ELMCDENMap,
                   std::string aBaseCO2GcamFileName, std::string aBaseCO2SfcFile, std::string aBaseCO2ShipFile, std::string aBaseCO2AirFile,
                   double *aELMArea, int *aNumLon, int *aNumLat, int *aNumReg, int *aNumSector, bool aRestartRun);
+
     void runGCAM(int *yyyymmdd, double *gcamoluc, double *gcamoemiss, std::string aBaseLucGcamFileName, std::string aBaseCO2GcamFileName, bool aSpinup,
                  double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
+                 const double *const aELMDegreeDays, const double *const aPopDensity, const double *const aELMLandFrac,
                  int *aNumLon, int *aNumLat, int *aNumPFT, int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod,
-                  std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars, bool aWriteScalars,
+                 std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars, bool aWriteScalars, const bool aReadDegreeDays, const bool aWriteDegreeDays, 
                  bool aScaleAgYield, bool aScaleCarbon,  std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName, bool aRestartRun);
+    
     void setLandProductivityScalingGCAM(int *yyyymmdd, double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
                         int *aNumLon, int *aNumLat, int *aNumPFT, std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars, bool aWriteScalars,
                         bool aScaleAgYield, bool aScaleCarbon, std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName);
+
+    void setDegreeDaysGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMDegreeDays,
+                           const double *const aPopDensity, const double *const aELMLandFrac, const int *aNumLon, const int *aNumLat,
+                           const std::string &aMappingFile, const bool aReadDegreeDays, const bool aWriteDegreeDays);
+    
     void downscaleEmissionsGCAM(double *gcamoemiss,
                                 double *gcamoco2sfcjan, double *gcamoco2sfcfeb, double *gcamoco2sfcmar, double *gcamoco2sfcapr,
                                 double *gcamoco2sfcmay, double *gcamoco2sfcjun, double *gcamoco2sfcjul, double *gcamoco2sfcaug,
@@ -51,6 +60,7 @@ public:
                                 std::string aPOPGCAMFileName, std::string aGDPGCAMFileName, std::string aCO2GCAMFileName,
                                 int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod, int *aNumLon, int *aNumLat, bool aWriteCO2, int *aCurrYear,
                                 std::string CO2DownscalingMethod);
+
     void separateSurfaceMonthlyEmissions(EmissDownscale surfaceCO2, EmissDownscale shipmentCO2, double *gcamoco2sfcjan, double *gcamoco2sfcfeb, double *gcamoco2sfcmar,
                                                               double *gcamoco2sfcapr, double *gcamoco2sfcmay, double *gcamoco2sfcjun,
                                                               double *gcamoco2sfcjul, double *gcamoco2sfcaug, double *gcamoco2sfcsep,

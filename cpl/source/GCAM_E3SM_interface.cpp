@@ -407,9 +407,10 @@ void GCAM_E3SM_interface::initGCAM(int *yyyymmdd, std::string aCaseName, std::st
 void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcamoemiss,
                                    std::string aBaseLucGcamFileName, std::string aBaseCO2GcamFileName, bool aSpinup,
                                    double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
+                                   double *aELMDegreeDays, double *aPopDensity, double *aELMLandFrac, 
                                    int *aNumLon, int *aNumLat, int *aNumPFT, int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod,
                                    std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars,
-                                   bool aWriteScalars, bool aScaleAgYield, bool aScaleCarbon,
+                                   bool aWriteScalars, bool aReadDegreeDays, bool aWriteDegreeDays, bool aScaleAgYield, bool aScaleCarbon,
                                    std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName, bool aRestartRun )
 {
     int z, p, i, num_it, spinup;
@@ -514,14 +515,17 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
                 system(command.c_str());
             }
 
-            // now set scalars for the current period
-            // this function checks the e3smYear for the first coupled year (hardcoded to 2016)
-            //    this is just so scalars are not calculated in the start year of 2015
+            // now set scalars and heating/cooling degree days for the current period
+            // the scalars function checks the e3smYear for the first coupled year (hardcoded to 2016)
+            // this is just so scalars are not calculated in the start year of 2015
             // try doing this check here instead
             if( e3smYear >=  *aFirstCoupledYear ) {
-               setLandProductivityScalingGCAM(yyyymmdd, aELMArea, aELMPFTFract, aELMNPP, aELMHR,
+                setLandProductivityScalingGCAM(yyyymmdd, aELMArea, aELMPFTFract, aELMNPP, aELMHR,
                             aNumLon, aNumLat, aNumPFT, aMappingFile, aFirstCoupledYear, aReadScalars, aWriteScalars,
                             aScaleAgYield, aScaleCarbon, aBaseNPPFileName, aBaseHRFileName, aBasePFTWtFileName);
+                
+                setDegreeDaysGCAM(gcamYear, aELMArea, aELMDegreeDays, aPopDensity, aELMLandFrac, aNumLon, aNumLat, 
+                    aMappingFile, aReadDegreeDays, aWriteDegreeDays);
             }
 
             // now run the current period
@@ -716,8 +720,6 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
         coupleLog << "Set previous year CO2 Emissions" << endl;  
         std::copy(mGcamCO2EmissCurrentGCAMYear.begin(), mGcamCO2EmissCurrentGCAMYear.end(), mGcamCO2EmissPreviousGCAMYear.begin());
     }
-
-        
 }
 
 void GCAM_E3SM_interface::setLandProductivityScalingGCAM(int *yyyymmdd, double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
@@ -920,8 +922,116 @@ void GCAM_E3SM_interface::setLandProductivityScalingGCAM(int *yyyymmdd, double *
 
         } // end if scale carbon
 
-    } // end if >= first coupled year
+    } // end if >= first coupled year   
+}
+
+/*!
+ * \brief Process and set degree days from E3SM to GCAM
+ * \author Philip Myint
+ * \details 
+ * This method aggregates gridded heating and cooling degree days from E3SM to GCAM's 
+ * regional scale using population weighting. The aggregated values are then passed to 
+ * GCAM's building energy sector, aftering splitting from E3SM's single degree days
+ * to separate heating and cooling degree days, to drive heating/cooling energy demand.
+ * 
+ * The method can either:
+ * 1. Read degree days from pre-calculated files (if aReadDegreeDays = true)
+ * 2. Calculate degree days from E3SM gridded data (if aReadDegreeDays = false)
+ * 
+ * Similar to carbon scalers, this supports optional file I/O for diagnostics and restart.
+ * 
+ * \param aGCAMYear Current GCAM year
+ * \param aELMArea Grid cell areas (km²)
+ * \param aELMDegreeDays Degree days from E3SM (degree-days per grid cell)
+ * \param aPopDensity Population density (people/km²)
+ * \param aELMLandFrac Land fraction (0-1) for each grid cell
+ * \param aNumLon Integer pointer for the number of longitude grid points
+ * \param aNumLat Integer pointer for the number of latitude grid points
+ * \param aMappingFile Path to regional mapping file
+ * \param aReadDegreeDays If true, read from files instead of calculating
+ * \param aWriteDegreeDays If true, write calculated values to diagnostic files
+ * 
+ */
+void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMDegreeDays, 
+    const double *const aPopDensity, const double *const aELMLandFrac, const int *aNumLon, const int *aNumLat, 
+    const std::string &aMappingFile, const bool aReadDegreeDays, const bool aWriteDegreeDays)
+{
+    ILogger& coupleLog = ILogger::getLogger("coupling_log");
+    coupleLog.setLevel(ILogger::NOTICE);
     
+    // Declare vectors to store the years, region IDs, and values for degree days
+    std::vector<int> degreeDaysYears;
+    std::vector<std::string> degreeDaysRegions;
+    std::vector<double> degreeDaysValues;
+    int numDegreeDayValues = 0;
+    
+    // Create DegreeDays object (false = aggregate to regions, not subregions).
+    // Derefences the pointers before passing them in as arguments
+    DegreeDays degreeDays(*aNumLon, *aNumLat, false);
+    
+    // Read regional mapping (needed for both read and calculate paths)
+    degreeDays.readRegionalMappingData(aMappingFile);
+    coupleLog << "Finished reading regional mapping data for degree days" << std::endl;
+    
+    // Process heating/cooling degree days. TODO: Consider taking file name as an argument, rather than hard coding
+    if (aReadDegreeDays) 
+    {
+        std::string degreeDaysFile = "./degree_days_" + std::to_string(aGCAMYear) + ".csv";
+        coupleLog << "Reading degree days from file: " << degreeDaysFile << std::endl;
+        numDegreeDayValues = degreeDays.readDegreeDays(degreeDaysFile, degreeDaysYears, degreeDaysRegions, degreeDaysValues);
+        coupleLog << "Read " << numDegreeDayValues << " degree day regional values" << std::endl;
+    } 
+    else 
+    {
+        coupleLog << "Calculating degree days from E3SM gridded data" << std::endl;
+        // Note: aggregateDegreeDays handles ONE type at a time
+        degreeDays.aggregateDegreeDays(aGCAMYear, aELMArea, aELMDegreeDays, aPopDensity, aELMLandFrac,
+                                       degreeDaysYears, degreeDaysRegions, degreeDaysValues, numDegreeDayValues);
+        coupleLog << "Calculated " << numDegreeDayValues << " degree day regional values" << std::endl;
+    }
+    
+    // Optional: write degree days to file for diagnostics/restart. TODO: Consider taking file name as an argument, rather than hard coding
+    if (aWriteDegreeDays && !aReadDegreeDays) 
+    {
+        std::string degreeDaysFile = "./degree_days_" + std::to_string(aGCAMYear) + ".csv";
+        degreeDays.writeDegreeDays(degreeDaysFile, degreeDaysYears, degreeDaysRegions, degreeDaysValues, numDegreeDayValues);
+        coupleLog << "Wrote degree days to file: " << degreeDaysFile << std::endl;
+    }
+
+    // Split the single degree days data set into separate heating and cooling degree days
+    std::vector<double> hddValues, cddValues;
+    for (const double value : degreeDaysValues)
+    {
+        if (value > 0.0)
+        {
+            hddValues.push_back(0.0);
+            cddValues.push_back(value);
+        }
+        else if (value < 0.0)
+        {
+            hddValues.push_back(std::abs(value));
+            cddValues.push_back(0.0);
+        }
+        else
+        {
+            hddValues.push_back(0.0);
+            cddValues.push_back(0.0);
+        }
+    }
+
+    // Set heating degree days in GCAM's building sector. TODO: Check if XML path is correct
+    coupleLog << "Setting HDD in GCAM, numDegreeDayValues = " << numDegreeDayValues << std::endl;
+    SetDataHelper setHDD(degreeDaysYears, degreeDaysRegions, hddValues,  
+        "world/region[+name]/consumer/nodeInput[@name='building']/heating-degree-days");
+    setHDD.run(runner->getInternalScenario());
+
+    // Set cooling degree days in GCAM's building sector. TODO: Check if XML path is correct
+    coupleLog << "Setting CDD in GCAM, numDegreeDayValues = " << numDegreeDayValues << std::endl;
+    SetDataHelper setCDD(degreeDaysYears, degreeDaysRegions, cddValues,  
+        "world/region[+name]/consumer/nodeInput[@name='building']/cooling-degree-days");
+    setCDD.run(runner->getInternalScenario());
+    
+    coupleLog << "Finished setting degree days in GCAM" << std::endl;
 }
 
 void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,

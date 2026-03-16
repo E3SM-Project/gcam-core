@@ -42,8 +42,9 @@ extern "C" {
   // Run GCAM
   void runcgcam_(int *yyyymmdd, double *gcamoluc, double *gcamoemiss, char* aBaseLucGcamFileName, char* aBaseCO2GcamFileName, int *aSpinup,
                  double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
+                 double *aELMDegreeDays, double *aPopDensity, double *aELMLandFrac,
                  int *aNumLon, int *aNumLat, int *aNumPFT, int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod,
-                 char* aMappingFile, int *aFirstCoupledYear, int *aReadScalars, int *aWriteScalars,
+                 char* aMappingFile, int *aFirstCoupledYear, int *aReadScalars, int *aWriteScalars, int *aReadDegreeDays, int *aWriteDegreeDays,
                  int *aScaleAgYield, int *aScaleCarbon, char* aBaseNPPFile, char* aBaseHRFile, char* aBasePFTwtFile, int *aRestartRun) {
   
       // convert to strings and bools where appropriate
@@ -56,14 +57,17 @@ extern "C" {
       std::string basePFTwtFile(aBasePFTwtFile);
       bool readScalars = *aReadScalars == 1 ? true : false;
       bool writeScalars = *aWriteScalars == 1 ? true : false;
+      const bool readDegreeDays = *aReadDegreeDays == 1 ? true : false;
+      const bool writeDegreeDays = *aWriteDegreeDays == 1 ? true : false;
       bool scaleAgYield = *aScaleAgYield == 1 ? true : false;
       bool scaleCarbon = *aScaleCarbon == 1 ? true : false;
       bool restartRun = *aRestartRun == 1 ? true : false;
   
       p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss, BaseLucGcamFileName, BaseCO2GcamFileName, Spinup,
                      aELMArea, aELMPFTFract, aELMNPP, aELMHR,
+                     aELMDegreeDays, aPopDensity, aELMLandFrac,
                      aNumLon, aNumLat, aNumPFT, aNumReg, aNumCty, aNumSector, aNumPeriod,
-                     MappingFile, aFirstCoupledYear, readScalars, writeScalars,
+                     MappingFile, aFirstCoupledYear, readScalars, writeScalars, readDegreeDays, writeDegreeDays,
                      scaleAgYield, scaleCarbon, baseNPPFile, baseHRFile, basePFTwtFile, restartRun);
   }
 
