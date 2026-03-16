@@ -245,6 +245,7 @@ void DegreeDays::readRegionalMappingData(const std::string &aFileName)
  * \pre Input arrays must have mNumLat × mNumLon elements
  * \pre aELMArea values must be positive (km²)
  * \pre aPopDensity values must be non-negative (people/km²)
+ * \pre aELMLandFrac values must be between 0 and 1
  * 
  * \post Output vectors contain one entry per region with non-zero population
  * \post aNumValues equals the number of regions processed
@@ -317,14 +318,14 @@ void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aE
     for (const auto &pair : totalPopulation) 
     {
         const std::string &regID = pair.first;
-        const double totalPopulation = pair.second;
+        const double populationInRegion = pair.second;
         
         // Calculate average degree days for each region as the total degree days divided by the total population. 
         // If total population is zero, set average degree days to 0 to avoid division by zero
-        if (totalPopulation > 0.0) 
+        if (populationInRegion > 0.0) 
         {
             // Calculate weighted average: total / population
-            aDegreeDaysMap[regID] = totalDegreeDays[regID] / totalPopulation;
+            aDegreeDaysMap[regID] = totalDegreeDays[regID] / populationInRegion;
         } 
         else 
         {
@@ -492,7 +493,7 @@ void DegreeDays::writeDegreeDays(const std::string &aFileName, const std::vector
  * The method:
  * 1. Clears all output vectors to ensure clean state
  * 2. Skips the header row (first line)
- * 3. Reads each data row and parses the 4 comma-separated fields
+ * 3. Reads each data row and parses the comma-separated fields
  * 4. Appends parsed values to corresponding vectors
  * 5. Returns the count of rows read
  * 
