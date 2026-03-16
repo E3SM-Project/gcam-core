@@ -1,7 +1,7 @@
 /*! 
  * \file GCAM_E3SM_interface.cpp
  * \brief E3SM gcam driver source file.
- * \author Kate Calvin and Alan Di Vittorio
+ * \author Kate Calvin and Alan Di Vittorio and Philip Myint
  */
 
 
