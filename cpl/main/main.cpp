@@ -149,6 +149,8 @@ int main( ) {
     int* NUM_EHC2ELM_LANDTYPES = &numLT;
     int numES = 3;
     int* NUM_EMISS_SECTORS = &numES;
+    int numER = 32;
+    int* NUM_EMISS_REGIONS = &numER;
     int numEC = 238;
     int* NUM_EMISS_COUNTRIES = &numEC;
     int numP = 20;
