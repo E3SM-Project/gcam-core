@@ -1,10 +1,11 @@
 #------------------------------------------------------------------------
 # Makefile for main
-# Kate Calvin
+# Kate Calvin and Philip Myint
 #------------------------------------------------------------------------
 
 #PATHOFFSET = path to objects directory
 PATHOFFSET = ../../cvs/objects
+BUILDPATH = $(PATHOFFSET)/build/linux
 include $(PATHOFFSET)/build/linux/config.system
 include ${PATHOFFSET}/build/linux/configure.gcam
 
