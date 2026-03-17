@@ -64,10 +64,10 @@ int main( ) {
     int yyyymmdd = 20150101;
     int* YYYYMMDD = &yyyymmdd;
    
-    // this file needs to be copied to ../cpl/data because it is not a namelist item
+    // this file needs to be copied to ../data because it is not a namelist item
     // it is located in: .../inputdata/iac/giac/gcam/gcam_6_0/data, prefix is machine dependent
-    // the other ../cpl/data files below also have to be copied until this namelist read is fixed
-    std::string BASE_CELL_AREA_FILE = "../cpl/data/base_f09_cell_area.csv";
+    // the other ../data files below also have to be copied until this namelist read is fixed
+    std::string BASE_CELL_AREA_FILE = "../data/base_f09_cell_area.csv";
 
     // These are the EHC namelist variables for GCAM
     //   this is the full namelist, even though not all are needed here
@@ -76,9 +76,9 @@ int main( ) {
     // In fully coupled mode, these are defined in an E3SM namelist.
     // the file .../gcam/exe/user_nl_gcam contains the full inputdata paths to the required files
     //   the prefix path to inputdata needs to be changed for each machine
-    // the ../cpl/data files need to be manually copied into .../gcam/cpl/data before running this program, until the read below is fixed
+    // the ../data files need to be manually copied into .../gcam/cpl/data before running this program, until the read below is fixed
     //   this is because we had to remove these files from this repo
-    // the ../cpl/mapping files remain in this repo
+    // the ../mapping files remain in this repo
     // note that the executable is assumed to exist and be running in the .../gcam/exe folder
     std::string CASE_NAME = "gcam_test";
     std::string GCAM_CONFIG = "configuration_ssp245_in_E3SM.xml";
@@ -105,13 +105,13 @@ int main( ) {
     std::string LAND_FRAC_FILE = "../cpl/data/land_frac.csv";
 
     // these are for Convergence downscaling
-    std::string CO2_GCAM_FILE = "../cpl/data/GCAMRegionalCO2Data.csv";
-    std::string COUNTRY2GRID_MAP = "../cpl/data/elm0.9x1.25tocountry_mapping_iso.csv";
-    std::string COUNTRY2REGION_MAP = "../cpl/data/iso_GCAM_regID_32reg.csv";
-    std::string GDP_GCAM_FILE = "../cpl/data/GCAMRegionalGDPData.csv";
-    std::string GDP_IIASA_FILE = "../cpl/data/IIASAGDPData.csv";
-    std::string POP_GCAM_FILE = "../cpl/data/GCAMRegionalPOPData.csv";
-    std::string POP_IIASA_FILE = "../cpl/data/IIASAPOPData.csv";
+    std::string CO2_GCAM_FILE = "../data/GCAMRegionalCO2Data.csv";
+    std::string COUNTRY2GRID_MAP = "../data/elm0.9x1.25tocountry_mapping_iso.csv";
+    std::string COUNTRY2REGION_MAP = "../data/iso_GCAM_regID_32reg.csv";
+    std::string GDP_GCAM_FILE = "../data/GCAMRegionalGDPData.csv";
+    std::string GDP_IIASA_FILE = "../data/IIASAGDPData.csv";
+    std::string POP_GCAM_FILE = "../data/GCAMRegionalPOPData.csv";
+    std::string POP_IIASA_FILE = "../data/IIASAPOPData.csv";
 
     std::string FDYNDAT_EHC = "./surfdata_iESM_dyn.nc";
 

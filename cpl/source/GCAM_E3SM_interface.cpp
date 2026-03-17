@@ -118,9 +118,9 @@ void GCAM_E3SM_interface::initGCAM(int *yyyymmdd, std::string aCaseName, std::st
     int e3smYear = *yyyymmdd/10000;
     int gcamPeriod, gcamYear, gcamYearPrev;
 
-    // identify default file names for control input and logging controls
+    // identify default file names for control input and logging controls. TODO: make the directory more general
     string configurationArg = aGCAMConfig;
-    string loggerFactoryArg = "log_conf.xml";
+    string loggerFactoryArg = "../../exe/log_conf.xml";
     
     // Add OS dependent prefixes to the arguments.
     const string configurationFileName = configurationArg;
@@ -407,7 +407,7 @@ void GCAM_E3SM_interface::initGCAM(int *yyyymmdd, std::string aCaseName, std::st
 void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcamoemiss,
                                    std::string aBaseLucGcamFileName, std::string aBaseCO2GcamFileName, bool aSpinup,
                                    double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
-                                   double *aELMDegreeDays, double *aPopDensity, double *aELMLandFrac, 
+                                   const double *const aELMDegreeDays, const double *const aPopDensity, const double *const aELMLandFrac, 
                                    int *aNumLon, int *aNumLat, int *aNumPFT, int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod,
                                    std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars,  std::string aScalarSourceDir,
                                    bool aWriteScalars, bool aReadDegreeDays, bool aWriteDegreeDays, bool aScaleAgYield, bool aScaleCarbon,
@@ -1020,15 +1020,19 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
         }
     }
 
+    // Create empty land tech column (same size as regions, all empty strings) because the SetDataHelper constructor
+    // expects 5 parameters, with the 3rd parameter being land techs (crop + basin names) in the case of carbon scalers
+    std::vector<std::string> emptyLandTech(degreeDaysRegions.size(), "");
+
     // Set heating degree days in GCAM's building sector. TODO: Check if XML path is correct
     coupleLog << "Setting HDD in GCAM, numDegreeDayValues = " << numDegreeDayValues << std::endl;
-    SetDataHelper setHDD(degreeDaysYears, degreeDaysRegions, hddValues,  
+    SetDataHelper setHDD(degreeDaysYears, degreeDaysRegions, emptyLandTech, hddValues,  
         "world/region[+name]/consumer/nodeInput[@name='building']/heating-degree-days");
     setHDD.run(runner->getInternalScenario());
 
     // Set cooling degree days in GCAM's building sector. TODO: Check if XML path is correct
     coupleLog << "Setting CDD in GCAM, numDegreeDayValues = " << numDegreeDayValues << std::endl;
-    SetDataHelper setCDD(degreeDaysYears, degreeDaysRegions, cddValues,  
+    SetDataHelper setCDD(degreeDaysYears, degreeDaysRegions, emptyLandTech, cddValues,  
         "world/region[+name]/consumer/nodeInput[@name='building']/cooling-degree-days");
     setCDD.run(runner->getInternalScenario());
     
