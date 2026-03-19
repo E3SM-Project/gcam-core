@@ -523,7 +523,7 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
                 setLandProductivityScalingGCAM(yyyymmdd, aELMArea, aELMPFTFract, aELMNPP, aELMHR,
                             aNumLon, aNumLat, aNumPFT, aMappingFile, aFirstCoupledYear, aReadScalars, aWriteScalars,
                             aScaleAgYield, aScaleCarbon, aBaseNPPFileName, aBaseHRFileName, aBasePFTWtFileName);
-                
+
                 setDegreeDaysGCAM(gcamYear, aELMArea, aELMDegreeDays, aPopDensity, aELMLandFrac, aNumLon, aNumLat, 
                     aMappingFile, aReadDegreeDays, aWriteDegreeDays);
             }

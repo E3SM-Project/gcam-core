@@ -120,7 +120,7 @@ int main( ) {
     bool READ_SCALARS = false;
     bool WRITE_CO2 = true; // if true will write to a file
     bool WRITE_SCALARS = true; // if true will write to a file
-    bool GCAM_SPINUP = false;   // if true a gcam spinup will run; otherwise restarts from restart files
+    bool GCAM_SPINUP = true;   // if true a gcam spinup will run; otherwise restarts from restart files
     bool READ_DEGREE_DAYS = false;
     bool WRITE_DEGREE_DAYS = true;
     bool RUN_GCAM = true;
@@ -373,6 +373,7 @@ if (false) {
     /*
      STEP 4: RUN GCAM
      */
+    
     if (RUN_FULL_SCENARIO) {
         for ( int y = 2015; y < 2100; y++ ){
             int ymd = y * 10000;
@@ -469,7 +470,7 @@ if (false) {
             // Read in land fractions (values range between 0 and 1) for the grid cells
             tempDegreeDaysData.readSpatialDataCSV(LAND_FRAC_FILE, true, true, false, gcamlandfrac);
         }
-       
+        
         p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss,
                            BASE_GCAM_LU_WH_FILE, BASE_GCAM_CO2_FILE, GCAM_SPINUP,
                            gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamdegreedays, gcampopdensity, gcamlandfrac, 
@@ -477,7 +478,7 @@ if (false) {
                            ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, WRITE_SCALARS, READ_DEGREE_DAYS, WRITE_DEGREE_DAYS,
                            ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE, RESTART_RUN);
 
- 
+        /*
         // TODO: Verify that removal of the following is correct: BASE_CO2_SURFACE_FILE, BASE_CO2EMISS_SURFACE, BASE_CO2_AIRCRAFT_FILE, BASE_CO2EMISS_AIRCRAFT,
         if( EHC_EAM_CO2_EMISSIONS ) {
             p_obj->downscaleEmissionsGCAM(gcamoemiss,
@@ -496,6 +497,7 @@ if (false) {
                                       NUM_LON, NUM_LAT, WRITE_CO2, YYYYMMDD, SURFACE_CO2_DOWNSCALING_METHOD);
 
         }
+                                      */
         
     }
     /*
