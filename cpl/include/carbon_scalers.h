@@ -45,7 +45,7 @@
 
 class CarbonScalers : public ASpatialData {
 public:
-    CarbonScalers(int aNumLat, int aNumLon, int aNumPFT);
+    CarbonScalers(int aNumLon, int aNumLat, int aNumPFT);
     ~CarbonScalers();
     int readScalers(std::string aFileName, std::vector<int>& aYears, std::vector<std::string>& aRegions, std::vector<std::string>& aLandTechs,
                       std::vector<double>& aAboveScalers, std::vector<double>& aBelowScalers);
