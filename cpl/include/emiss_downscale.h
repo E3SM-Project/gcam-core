@@ -50,7 +50,7 @@ public:
     // TODO: Eventually these will need to be vectors of regional emissions instead of global totals
     // void downscaleCO2Emissions(const std::string sector, std::vector<double> aCurrYearRegionEmissVector);
     // Proportion-based method directly from regional to grid
-    void downscaleSurfaceCO2EmissionsFromRegion2Grid(double *aCurrYearEmissions, std::vector<double>& aBaseYearEmissions_sfc, std::vector<double>& aBaseYearEmissionsGrid_sfc);
+    void downscaleSurfaceCO2EmissionsFromRegion2Grid(double *aCurrYearEmissions, std::vector<double>& aBaseYearEmissions_sfc, std::vector<double>& aBaseYearEmissionsGrid_sfc, double *scaling_factor);
     
     // Convergence-based method
     void calculateCountryBaseYearEmissionData(std::vector<double>& aBaseYearEmissions_sfc, std::vector<double>& aBaseYearEmissionsGrid_sfc);
@@ -75,7 +75,7 @@ public:
                                                               double *gcamoco2airhijul, double *gcamoco2airhiaug, double *gcamoco2airhisep,
                                                               double *gcamoco2airhioct, double *gcamoco2airhinov, double *gcamoco2airhidec,
                                                               int aNumLon, int aNumLat);
-    void readRegionMappingData(std::string aFileName);
+    void readRegionMappingData(std::string aFileName, bool isGCAMUSA=false, bool isRegionalLevel=true);
     void readRegionBaseYearEmissionData(std::string aFileName);
     void readCountryMappingData(std::string aFileName);
     void readCountry2RegionMappingData(std::string aFileName);
@@ -169,7 +169,58 @@ private:
         {"SoutheastAsia", 29}, 
         {"Taiwan", 30},
         {"Argentina", 31},
-        {"Colombia", 32}
+        {"Colombia", 32},
+        {"AK", 33},
+        {"AL", 34},
+        {"AR", 35},
+        {"AZ", 36},
+        {"CA", 37},
+        {"CO", 38},
+        {"CT", 39},
+        {"DC", 40},
+        {"DE", 41},
+        {"FL", 42},
+        {"GA", 43},
+        {"HI", 44},
+        {"IA", 45},
+        {"ID", 46},
+        {"IL", 47},
+        {"IN", 48},
+        {"KS", 49},
+        {"KY", 50},
+        {"LA", 51},
+        {"MA", 52},
+        {"MD", 53},
+        {"ME", 54},
+        {"MI", 55},
+        {"MN", 56},
+        {"MO", 57},
+        {"MS", 58},
+        {"MT", 59},
+        {"NC", 60},
+        {"ND", 61},
+        {"NE", 62},
+        {"NH", 63},
+        {"NJ", 64},
+        {"NM", 65},
+        {"NV", 66},
+        {"NY", 67},
+        {"OH", 68},
+        {"OK", 69},
+        {"OR", 70},
+        {"PA", 71},
+        {"RI", 72},
+        {"SC", 73},
+        {"SD", 74},
+        {"TN", 75},
+        {"TX", 76},
+        {"UT", 77},
+        {"VA", 78},
+        {"VT", 79},
+        {"WA", 80},
+        {"WI", 81},
+        {"WV", 82},
+        {"WY", 83}
     };
     
     std::map<std::string, int> mCountryIDName;
