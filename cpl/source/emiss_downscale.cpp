@@ -80,7 +80,7 @@ EmissDownscale::~EmissDownscale()
 }
 
 // Read in a regional mapping data from a file
-void EmissDownscale::readRegionMappingData(std::string aFileName)
+void EmissDownscale::readRegionMappingData(std::string aFileName, bool isGCAMUSA, bool isRegionalLevel)
 {
     ifstream data(aFileName);
     if (!data.is_open())
@@ -124,6 +124,19 @@ void EmissDownscale::readRegionMappingData(std::string aFileName)
 
         // Create region ID
         string regID = region;
+
+        // filter out regions if running with GCAM-USA and this is not the regional level mapping file
+        if (isGCAMUSA) {
+            auto currReg = mRegionIDName.find(regID);
+            if (currReg != mRegionIDName.end()) {
+                if (isRegionalLevel && currReg->second > 32) {
+                    continue;
+                }
+                if (!isRegionalLevel && currReg->second == 1) {
+                    continue;
+                }
+            }
+        }
 
         // Add region ID to the mapping vector.
         // Note that there maybe more than one regID per gridID (hence, a vector)
@@ -1017,7 +1030,7 @@ void EmissDownscale::downscaleSurfaceCO2EmissionsFromCountry2Grid(double *aRegio
 
 
 // Downscale emissions
-void EmissDownscale::downscaleSurfaceCO2EmissionsFromRegion2Grid(double *aCurrYearEmissions, std::vector<double>& aBaseYearEmissions_sfc, std::vector<double>& aBaseYearEmissionsGrid_sfc)
+void EmissDownscale::downscaleSurfaceCO2EmissionsFromRegion2Grid(double *aCurrYearEmissions, std::vector<double>& aBaseYearEmissions_sfc, std::vector<double>& aBaseYearEmissionsGrid_sfc, double *scaling_factor)
 { // baseYearEmission need to be updated
 
     // First, set the values that were read in as the BaseYearEmissions
@@ -1054,7 +1067,14 @@ void EmissDownscale::downscaleSurfaceCO2EmissionsFromRegion2Grid(double *aCurrYe
                     auto currReg = mRegionIDName.find(regID);
                     int regIndex = (*currReg).second - 1;
 
-                    scalar += aCurrYearEmissions[regIndex] / aBaseYearEmissions_sfc[regIndex] * mRegionWeights[std::make_pair(gridID, regID)];
+                     if (aBaseYearEmissions_sfc[regIndex] == 0)
+                    {
+                        scalar += 0.0;
+                    }
+                    else
+                    {
+                        scalar += aCurrYearEmissions[regIndex] / aBaseYearEmissions_sfc[regIndex] * scaling_factor[regIndex] * mRegionWeights[std::make_pair(gridID, regID)];
+                    }
                     weight += mRegionWeights[std::make_pair(gridID, regID)];
                 }
                 scalar = scalar / weight; // normalized by the total weight 

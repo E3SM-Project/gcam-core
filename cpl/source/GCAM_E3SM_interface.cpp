@@ -957,6 +957,9 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
     //std::vector<double> gcamoSfcEmissVector((*aNumReg),0);
     //std::vector<double> gcamoAirEmissVector((*aNumReg),0);
    
+    aRegionMappingFile = "/compyfs/inputdata/iac/giac/gcam/gcam_6_0/data/emission_downscaling/elm0.9x1.25togcam_usa_mapping.csv";
+    bool isGCAMUSA = true;
+
     // Downscale surface CO2 emissions
     ILogger& coupleLog = ILogger::getLogger( "coupling_log" );
     coupleLog.setLevel( ILogger::NOTICE );
@@ -965,6 +968,12 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
     double gcamoemiss_sfc[*aNumReg];
     double gcamoemiss_air[*aNumReg];
     double gcamoemiss_ship[*aNumReg];
+    double gcamoemiss_sfc_ratio[*aNumReg];
+    double gcamoemiss_sfc_region[*aNumReg];
+    double gcamoemiss_sfc_state[*aNumReg];
+    std::vector<double> mBaseYearEmissions_sfc_region((*aNumReg), 0.0);
+    std::vector<double> mBaseYearEmissions_sfc_state((*aNumReg), 0.0);
+    double mBaseYearEmissions_sfc_state_total = 0.0;
 
     // separate gcamoemiss into surface and aircraft and shipping sector vectors
     row = 0;
@@ -980,6 +989,7 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
             }
             row++;
         }
+        gcamoemiss_sfc_ratio[r] = 1.0;
     }
 
     //for(int tmp = 1; tmp <= (*aNumReg); tmp++) {
@@ -988,6 +998,53 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
     //    coupleLog << "Diagnostics: regional aircraft CO2 Emissions in " << *aCurrYear << " = " << gcamoemiss_air[tmp - 1] << endl;
     //    coupleLog << "Diagnostics: regional shipment CO2 Emissions in " << *aCurrYear << " = " << gcamoemiss_ship[tmp - 1] << endl;
     //}
+
+    // Seperate the region and state level emission data.
+
+    if (isGCAMUSA)
+    {
+        for (r = 32; r < (*aNumReg); r++) 
+        {
+            mBaseYearEmissions_sfc_state_total += mBaseYearEmissions_sfc[r];
+        }
+
+        for (r = 0; r < (*aNumReg); r++) 
+        {
+            gcamoemiss_sfc_region[r] = 0.0;
+            gcamoemiss_sfc_state[r] = 0.0;
+            mBaseYearEmissions_sfc_region[r] = 0.0;
+            mBaseYearEmissions_sfc_state[r] = 0.0;
+            gcamoemiss_sfc_ratio[r] = 1.0;
+            if (r < 32)
+            {
+                gcamoemiss_sfc_region[r] = gcamoemiss_sfc[r];     
+                mBaseYearEmissions_sfc_region[r] = mBaseYearEmissions_sfc[r];         
+            }
+            else
+            {
+                gcamoemiss_sfc_state[r] = gcamoemiss_sfc[r];
+                mBaseYearEmissions_sfc_state[r] = mBaseYearEmissions_sfc[r];
+            }
+            if (r == 0)
+            {
+                gcamoemiss_sfc_ratio[r] = 1 - mBaseYearEmissions_sfc_state_total / (mBaseYearEmissions_sfc_state_total + mBaseYearEmissions_sfc[0]);              
+            }
+            else if (r >= 32)
+            {
+                gcamoemiss_sfc_ratio[r] = mBaseYearEmissions_sfc_state_total / (mBaseYearEmissions_sfc_state_total + mBaseYearEmissions_sfc[0]);
+            }
+        }
+    
+        for(int tmp = 1; tmp <= (*aNumReg); tmp++) {
+            coupleLog << "Diagnostics: regional surface CO2 Emissions in " << *aCurrYear << " = " << gcamoemiss_sfc[tmp - 1] << endl;
+            coupleLog << "Regional surface scalar = " << gcamoemiss_sfc[tmp - 1] / mBaseYearEmissions_sfc[tmp - 1] << endl;
+            coupleLog << "Diagnostics: regional aircraft CO2 Emissions in " << *aCurrYear << " = " << gcamoemiss_air[tmp - 1] << endl;
+            coupleLog << "Diagnostics: regional shipment CO2 Emissions in " << *aCurrYear << " = " << gcamoemiss_ship[tmp - 1] << endl;
+            coupleLog << "Diagnostics: regional gcamoemiss_sfc_region CO2 Emissions in " << *aCurrYear << " = " << gcamoemiss_sfc_region[tmp - 1] << endl;
+            coupleLog << "Diagnostics: regional gcamoemiss_sfc_state CO2 Emissions in " << *aCurrYear << " = " << gcamoemiss_sfc_state[tmp - 1] << endl;
+            coupleLog << "Diagnostics: regional gcamoemiss_sfc_ratio CO2 Emissions in " << *aCurrYear << " = " << gcamoemiss_sfc_ratio[tmp - 1] << endl;
+        }
+    }
 
     // emissions data are monthly, surface data excludes international shipping
     EmissDownscale surfaceCO2(*aNumLon, *aNumLat, 12, 1, *aNumReg, *aNumCty, *aNumSector, *aNumPeriod);
@@ -1000,39 +1057,61 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
     // this read should not have worked because the ASpatialData constructor is not called to allocate the vectors and the access uses [] 
     //surfaceCO2.readSpatialData(aBaseCO2SfcFile, true, true, false);
     //coupleLog << "Finish read spatial data" << endl;
-    
-    if (aCO2DownscalingMethod == "Convergence")
+    if (!isGCAMUSA)
     {
-        coupleLog << "Start Convergence-based downscaling" << endl;
-        surfaceCO2.readRegionMappingData(aRegionMappingFile);
-        coupleLog << "Finish read regional mapping data" << aRegionMappingFile << endl;
+        if (aCO2DownscalingMethod == "Convergence")
+        {
+            coupleLog << "Start Convergence-based downscaling" << endl;
+            surfaceCO2.readRegionMappingData(aRegionMappingFile);
+            coupleLog << "Finish read regional mapping data" << aRegionMappingFile << endl;
         
-        coupleLog << "Start readCountryMappingData:" << aCountryMappingFile << endl;
-        surfaceCO2.readCountryMappingData(aCountryMappingFile);
-        coupleLog << "Start readCountry2RegionMappingData:" << aCountry2RegionMappingFile << endl;
-        surfaceCO2.readCountry2RegionMappingData(aCountry2RegionMappingFile);
-        //coupleLog << "Start readRegionBaseYearEmissionData" << endl;
-        //surfaceCO2.readRegionBaseYearEmissionData(aBaseCO2GcamFileName);
-        coupleLog << "Start calculateCountryBaseYearEmissionData:" << endl;
-        surfaceCO2.calculateCountryBaseYearEmissionData(mBaseYearEmissions_sfc, mBaseYearEmissionsGrid_sfc);
+            coupleLog << "Start readCountryMappingData:" << aCountryMappingFile << endl;
+            surfaceCO2.readCountryMappingData(aCountryMappingFile);
+            coupleLog << "Start readCountry2RegionMappingData:" << aCountry2RegionMappingFile << endl;
+            surfaceCO2.readCountry2RegionMappingData(aCountry2RegionMappingFile);
+            //coupleLog << "Start readRegionBaseYearEmissionData" << endl;
+            //surfaceCO2.readRegionBaseYearEmissionData(aBaseCO2GcamFileName);
+            coupleLog << "Start calculateCountryBaseYearEmissionData:" << endl;
+            surfaceCO2.calculateCountryBaseYearEmissionData(mBaseYearEmissions_sfc, mBaseYearEmissionsGrid_sfc);
        
         
-        coupleLog << "Start readPOPGDPCO2Data" << aCO2GCAMFileName << endl;
-        surfaceCO2.readPOPGDPCO2Data(aPOPIIASAFileName, aGDPIIASAFileName, aPOPGCAMFileName, aGDPGCAMFileName, aCO2GCAMFileName);
-        coupleLog << "Start downscaleSurfaceCO2EmissionsFromRegion2Country" << endl;
-        surfaceCO2.downscaleSurfaceCO2EmissionsFromRegion2Country(gcamoemiss_sfc, *aCurrYear/10000);
-        coupleLog << "Start downscaleSurfaceCO2EmissionsFromCountry2Grid" << endl;
-        surfaceCO2.downscaleSurfaceCO2EmissionsFromCountry2Grid(gcamoemiss_sfc, mBaseYearEmissions_sfc, mBaseYearEmissionsGrid_sfc);
+            coupleLog << "Start readPOPGDPCO2Data" << aCO2GCAMFileName << endl;
+            surfaceCO2.readPOPGDPCO2Data(aPOPIIASAFileName, aGDPIIASAFileName, aPOPGCAMFileName, aGDPGCAMFileName, aCO2GCAMFileName);
+            coupleLog << "Start downscaleSurfaceCO2EmissionsFromRegion2Country" << endl;
+            surfaceCO2.downscaleSurfaceCO2EmissionsFromRegion2Country(gcamoemiss_sfc, *aCurrYear/10000);
+            coupleLog << "Start downscaleSurfaceCO2EmissionsFromCountry2Grid" << endl;
+            surfaceCO2.downscaleSurfaceCO2EmissionsFromCountry2Grid(gcamoemiss_sfc, mBaseYearEmissions_sfc, mBaseYearEmissionsGrid_sfc);
+        }
+        else
+        {
+            surfaceCO2.readRegionMappingData(aRegionMappingFile);
+            coupleLog << "Finish read regional mapping data and start surface downscaling" << endl;
+        
+            //surfaceCO2.readRegionBaseYearEmissionData(aBaseCO2GcamFileName);
+            //coupleLog << "GCAM run: Finish read Base year emission data" << endl;
+        
+            surfaceCO2.downscaleSurfaceCO2EmissionsFromRegion2Grid(gcamoemiss_sfc, mBaseYearEmissions_sfc, mBaseYearEmissionsGrid_sfc, gcamoemiss_sfc_ratio);
+        }
     }
     else
     {
-        surfaceCO2.readRegionMappingData(aRegionMappingFile);
-        coupleLog << "Finish read regional mapping data and start surface downscaling" << endl;
-        
-        //surfaceCO2.readRegionBaseYearEmissionData(aBaseCO2GcamFileName);
-        //coupleLog << "GCAM run: Finish read Base year emission data" << endl;
-        
-        surfaceCO2.downscaleSurfaceCO2EmissionsFromRegion2Grid(gcamoemiss_sfc, mBaseYearEmissions_sfc, mBaseYearEmissionsGrid_sfc);
+        coupleLog << "GCAM-USA regional level: downscaling" << endl;
+        EmissDownscale surfaceCO2_region(*aNumLon, *aNumLat, 12, 1, *aNumReg, *aNumCty, *aNumSector, *aNumPeriod);
+        surfaceCO2_region.readRegionMappingData(aRegionMappingFile, isGCAMUSA, true);
+        surfaceCO2_region.downscaleSurfaceCO2EmissionsFromRegion2Grid(gcamoemiss_sfc_region, mBaseYearEmissions_sfc_region, mBaseYearEmissionsGrid_sfc, gcamoemiss_sfc_ratio);
+
+        coupleLog << "GCAM-USA state level: downscaling" << endl;
+        EmissDownscale surfaceCO2_state(*aNumLon, *aNumLat, 12, 1, *aNumReg, *aNumCty, *aNumSector, *aNumPeriod);
+        surfaceCO2_state.readRegionMappingData(aRegionMappingFile, isGCAMUSA, false);
+        surfaceCO2_state.downscaleSurfaceCO2EmissionsFromRegion2Grid(gcamoemiss_sfc_state, mBaseYearEmissions_sfc_state, mBaseYearEmissionsGrid_sfc, gcamoemiss_sfc_ratio);
+
+        coupleLog << "GCAM-USA combined level: downscaling" << endl;
+        // Perform element-wise addition
+        int gridPerMonth = (*aNumLat) * (*aNumLon);
+        for (int i = 0; i < gridPerMonth * 12; i++)
+        {
+            surfaceCO2.mCurrYearEmissVector[i] = surfaceCO2_region.mCurrYearEmissVector[i] + surfaceCO2_state.mCurrYearEmissVector[i];
+        }
     }
 
     coupleLog << "after surface downscaling" << endl;
