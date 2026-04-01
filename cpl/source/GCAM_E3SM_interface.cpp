@@ -1025,17 +1025,28 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
 
     // Set heating degree days in GCAM's building sector. 
     // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly.
-    coupleLog << "Setting HDD in GCAM, numDegreeDayValues = " << numDegreeDayValues << std::endl;
+    coupleLog << "Setting HDD in GCAM commercial buildings, numDegreeDayValues = " << numDegreeDayValues << std::endl;
     SetDataHelper setHDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, hddValues,  
         "world/region[+name]/gcam-consumer/nodeInput/building-node-input/thermal-building-service-input[+name]/degree-days");
     setHDD.run(runner->getInternalScenario());
 
-    // Set cooling degree days in GCAM's building sector. 
     // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly.
     std::fill(degreeDaysService.begin(), degreeDaysService.end(), "comm cooling");
-    coupleLog << "Setting CDD in GCAM, numDegreeDayValues = " << numDegreeDayValues << std::endl;
+    coupleLog << "Setting CDD in GCAM commercial buildings, numDegreeDayValues = " << numDegreeDayValues << std::endl;
     SetDataHelper setCDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, cddValues,  
         "world/region[+name]/gcam-consumer/nodeInput/building-node-input/thermal-building-service-input[+name]/degree-days");
+    setCDD.run(runner->getInternalScenario());
+
+    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly.
+    std::fill(degreeDaysService.begin(), degreeDaysService.end(), "resid heating");
+    setHDD.setLandTechColumn(degreeDaysService);
+    coupleLog << "Setting HDD in GCAM residential buildings, numDegreeDayValues = " << numDegreeDayValues << std::endl;
+    setHDD.run(runner->getInternalScenario());
+
+    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly.
+    std::fill(degreeDaysService.begin(), degreeDaysService.end(), "resid cooling");
+    setCDD.setLandTechColumn(degreeDaysService);
+    coupleLog << "Setting CDD in GCAM residential buildings, numDegreeDayValues = " << numDegreeDayValues << std::endl;
     setCDD.run(runner->getInternalScenario());
     
     coupleLog << "Finished setting degree days in GCAM" << std::endl;

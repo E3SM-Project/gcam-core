@@ -113,6 +113,11 @@ SetDataHelper::~SetDataHelper() {
   }
 }
 
+void SetDataHelper::setLandTechColumn(const std::vector<std::string>& aLandTechColumn) 
+{
+    mLandTechColumn = aLandTechColumn;
+}
+
 template<>
 void SetDataHelper::processData(double& aData) {
 
