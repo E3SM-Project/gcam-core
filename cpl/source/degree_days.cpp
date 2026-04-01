@@ -292,7 +292,7 @@ void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aE
                 // Get the vector of regionIDs for this grid cell
                 const std::vector<std::string> &regInGrd = tempGrid->second;
 
-                // Loop over all regions this grid is mapped to and calculate the scalars
+                // Loop over all regions this grid is mapped to and calculate the contribution to the total population of each region and the degree days.
                 for (const auto &regID : regInGrd) 
                 {
                     // Calculate the population weight for this grid cell and region combination as the product of the fraction of the grid cell in this region (from the mapping file), 
@@ -303,7 +303,7 @@ void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aE
                     totalPopulation[regID] += popWeight;
                     totalDegreeDays[regID] += aELMDegreeDays[gridIndex] * popWeight;
 
-                } // for (auto regID : regInGrd) 
+                } // for (const auto &regID : regInGrd) 
 
             } // if (tempGrid == mRegionMapping.end()) 
 
@@ -446,7 +446,7 @@ void DegreeDays::writeDegreeDays(const std::string &aFileName, const std::vector
     {
         exit(EXIT_FAILURE);
     }
-    // Write scalars to max precision for exact conversion between binary and text
+    // Write degree days to max precision for exact conversion between binary and text
     oFile << std::fixed << std::setprecision(std::numeric_limits<double>::max_digits10);
 
     // Include a header line

@@ -95,10 +95,12 @@ void SetDataHelper::run(Scenario* aScenario) {
 
     mRow = 0;
     for(auto row : mDataVector) {
-        //sdhLog << "before filter mRow=" << mRow << " Region=" << mRegionColumn[mRow] << " LandTech=" << mLandTechColumn[mRow] << endl;
-        //sdhLog << " Year=" << mYearColumn[mRow] << " mDataVector scalar=" << mDataVector[mRow] << endl;
-        //sdhLog << "mFilterSteps[1]region=" << boost::fusion::at_key<NamedFilter>(mFilterSteps[1]->mFilterMap)->mMatcher->matchesString(mRegionColumn[mRow]) << endl;
-        //sdhLog << "mFilterSteps[2]technology=" << boost::fusion::at_key<NamedFilter>(mFilterSteps[4]->mFilterMap)->mMatcher->matchesString(mLandTechColumn[mRow]) << endl;
+        /*
+        sdhLog << "before filter mRow=" << mRow << " Region=" << mRegionColumn[mRow] << " LandTech=" << mLandTechColumn[mRow] << endl;
+        sdhLog << " Year=" << mYearColumn[mRow] << " mDataVector scalar=" << mDataVector[mRow] << endl;
+        sdhLog << "mFilterSteps[1]region=" << boost::fusion::at_key<NamedFilter>(mFilterSteps[1]->mFilterMap)->mMatcher->matchesString(mRegionColumn[mRow]) << endl;
+        sdhLog << "mFilterSteps[2]technology=" << boost::fusion::at_key<NamedFilter>(mFilterSteps[4]->mFilterMap)->mMatcher->matchesString(mLandTechColumn[mRow]) << endl;
+        */
         fusion.startFilter(aScenario);
         //sdhLog << "after filter mDataVector size =" << mDataVector.size() << endl;
         mRow++;
