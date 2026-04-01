@@ -55,11 +55,12 @@ public:
     void run( Scenario* aScenario );
     template<typename T>
     void processData(T& aData);
+    void setLandTechColumn (const std::vector<std::string>& aLandTechColumn);
 private:
-    const std::vector<int>& mYearColumn;
-    const std::vector<std::string>& mRegionColumn;
-    const std::vector<std::string>& mLandTechColumn;
-    const std::vector<double>& mDataVector;
+    const std::vector<int> mYearColumn;
+    const std::vector<std::string> mRegionColumn;
+    std::vector<std::string> mLandTechColumn;
+    const std::vector<double> mDataVector;
     std::vector<FilterStep*> mFilterSteps;
     size_t mRow;
     
