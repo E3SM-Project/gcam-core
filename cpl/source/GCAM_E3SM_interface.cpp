@@ -1019,20 +1019,23 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
         }
     }
 
-    // Create empty land tech column (same size as regions, all empty strings) because the SetDataHelper constructor
-    // expects 5 parameters, with the 3rd parameter being land techs (crop + basin names) in the case of carbon scalers
-    std::vector<std::string> emptyLandTech(degreeDaysRegions.size(), "");
+    // The SetDataHelper constructor expects 5 parameters, with the 3rd parameter being land techs (crop + basin names) in the case of carbon scalers.
+    // For degree days, we can use a vector with the same string (either "comm heating" or "comm cooling") for all records.
+    std::vector<std::string> degreeDaysService(degreeDaysRegions.size(), "comm heating");
 
-    // Set heating degree days in GCAM's building sector. TODO: Check if XML path is correct
+    // Set heating degree days in GCAM's building sector. 
+    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly.
     coupleLog << "Setting HDD in GCAM, numDegreeDayValues = " << numDegreeDayValues << std::endl;
-    SetDataHelper setHDD(degreeDaysYears, degreeDaysRegions, emptyLandTech, hddValues,  
-        "world/region[+name]/consumer/nodeInput[@name='building']/heating-degree-days");
+    SetDataHelper setHDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, hddValues,  
+        "world/region[+name]/gcam-consumer/nodeInput/building-node-input/thermal-building-service-input[+name]/degree-days");
     setHDD.run(runner->getInternalScenario());
 
-    // Set cooling degree days in GCAM's building sector. TODO: Check if XML path is correct
+    // Set cooling degree days in GCAM's building sector. 
+    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly.
+    std::fill(degreeDaysService.begin(), degreeDaysService.end(), "comm cooling");
     coupleLog << "Setting CDD in GCAM, numDegreeDayValues = " << numDegreeDayValues << std::endl;
-    SetDataHelper setCDD(degreeDaysYears, degreeDaysRegions, emptyLandTech, cddValues,  
-        "world/region[+name]/consumer/nodeInput[@name='building']/cooling-degree-days");
+    SetDataHelper setCDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, cddValues,  
+        "world/region[+name]/gcam-consumer/nodeInput/building-node-input/thermal-building-service-input[+name]/degree-days");
     setCDD.run(runner->getInternalScenario());
     
     coupleLog << "Finished setting degree days in GCAM" << std::endl;
