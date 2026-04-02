@@ -951,15 +951,12 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
                                                  std::string aPOPIIASAFileName, std::string aGDPIIASAFileName,
                                                  std::string aPOPGCAMFileName, std::string aGDPGCAMFileName, std::string aCO2GCAMFileName,
                                                  int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod, int *aNumLon, int *aNumLat, bool aWriteCO2, int *aCurrYear,
-                                                 std::string aCO2DownscalingMethod) {
+                                                 std::string aCO2DownscalingMethod, bool aUseGCAMUSA) {
 
     int r, s, row;
     //std::vector<double> gcamoSfcEmissVector((*aNumReg),0);
     //std::vector<double> gcamoAirEmissVector((*aNumReg),0);
-   
-    aRegionMappingFile = "/compyfs/inputdata/iac/giac/gcam/gcam_6_0/data/emission_downscaling/elm0.9x1.25togcam_usa_mapping.csv";
-    bool isGCAMUSA = true;
-
+    
     // Downscale surface CO2 emissions
     ILogger& coupleLog = ILogger::getLogger( "coupling_log" );
     coupleLog.setLevel( ILogger::NOTICE );
@@ -1001,7 +998,7 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
 
     // Seperate the region and state level emission data.
 
-    if (isGCAMUSA)
+    if (aUseGCAMUSA)
     {
         for (r = 32; r < (*aNumReg); r++) 
         {
@@ -1057,7 +1054,7 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
     // this read should not have worked because the ASpatialData constructor is not called to allocate the vectors and the access uses [] 
     //surfaceCO2.readSpatialData(aBaseCO2SfcFile, true, true, false);
     //coupleLog << "Finish read spatial data" << endl;
-    if (!isGCAMUSA)
+    if (!aUseGCAMUSA)
     {
         if (aCO2DownscalingMethod == "Convergence")
         {
@@ -1097,12 +1094,12 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
     {
         coupleLog << "GCAM-USA regional level: downscaling" << endl;
         EmissDownscale surfaceCO2_region(*aNumLon, *aNumLat, 12, 1, *aNumReg, *aNumCty, *aNumSector, *aNumPeriod);
-        surfaceCO2_region.readRegionMappingData(aRegionMappingFile, isGCAMUSA, true);
+        surfaceCO2_region.readRegionMappingData(aRegionMappingFile, aUseGCAMUSA, true);
         surfaceCO2_region.downscaleSurfaceCO2EmissionsFromRegion2Grid(gcamoemiss_sfc_region, mBaseYearEmissions_sfc_region, mBaseYearEmissionsGrid_sfc, gcamoemiss_sfc_ratio);
 
         coupleLog << "GCAM-USA state level: downscaling" << endl;
         EmissDownscale surfaceCO2_state(*aNumLon, *aNumLat, 12, 1, *aNumReg, *aNumCty, *aNumSector, *aNumPeriod);
-        surfaceCO2_state.readRegionMappingData(aRegionMappingFile, isGCAMUSA, false);
+        surfaceCO2_state.readRegionMappingData(aRegionMappingFile, aUseGCAMUSA, false);
         surfaceCO2_state.downscaleSurfaceCO2EmissionsFromRegion2Grid(gcamoemiss_sfc_state, mBaseYearEmissions_sfc_state, mBaseYearEmissionsGrid_sfc, gcamoemiss_sfc_ratio);
 
         coupleLog << "GCAM-USA combined level: downscaling" << endl;
