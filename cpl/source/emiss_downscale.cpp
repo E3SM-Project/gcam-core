@@ -80,7 +80,7 @@ EmissDownscale::~EmissDownscale()
 }
 
 // Read in a regional mapping data from a file
-void EmissDownscale::readRegionMappingData(std::string aFileName, bool isGCAMUSA, bool isRegionalLevel)
+void EmissDownscale::readRegionMappingData(std::string aFileName, bool aUseGCAMUSA, bool isRegionalLevel)
 {
     ifstream data(aFileName);
     if (!data.is_open())
@@ -126,7 +126,7 @@ void EmissDownscale::readRegionMappingData(std::string aFileName, bool isGCAMUSA
         string regID = region;
 
         // filter out regions if running with GCAM-USA and this is not the regional level mapping file
-        if (isGCAMUSA) {
+        if (aUseGCAMUSA) {
             auto currReg = mRegionIDName.find(regID);
             if (currReg != mRegionIDName.end()) {
                 if (isRegionalLevel && currReg->second > 32) {
@@ -1067,14 +1067,7 @@ void EmissDownscale::downscaleSurfaceCO2EmissionsFromRegion2Grid(double *aCurrYe
                     auto currReg = mRegionIDName.find(regID);
                     int regIndex = (*currReg).second - 1;
 
-                     if (aBaseYearEmissions_sfc[regIndex] == 0)
-                    {
-                        scalar += 0.0;
-                    }
-                    else
-                    {
-                        scalar += aCurrYearEmissions[regIndex] / aBaseYearEmissions_sfc[regIndex] * scaling_factor[regIndex] * mRegionWeights[std::make_pair(gridID, regID)];
-                    }
+                    scalar += aCurrYearEmissions[regIndex] / aBaseYearEmissions_sfc[regIndex] * scaling_factor[regIndex] * mRegionWeights[std::make_pair(gridID, regID)];
                     weight += mRegionWeights[std::make_pair(gridID, regID)];
                 }
                 scalar = scalar / weight; // normalized by the total weight 

@@ -75,7 +75,7 @@ public:
                                                               double *gcamoco2airhijul, double *gcamoco2airhiaug, double *gcamoco2airhisep,
                                                               double *gcamoco2airhioct, double *gcamoco2airhinov, double *gcamoco2airhidec,
                                                               int aNumLon, int aNumLat);
-    void readRegionMappingData(std::string aFileName, bool isGCAMUSA=false, bool isRegionalLevel=true);
+    void readRegionMappingData(std::string aFileName, bool aUseGCAMUSA=false, bool isRegionalLevel=true);
     void readRegionBaseYearEmissionData(std::string aFileName);
     void readCountryMappingData(std::string aFileName);
     void readCountry2RegionMappingData(std::string aFileName);
