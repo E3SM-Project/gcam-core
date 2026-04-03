@@ -414,7 +414,7 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
                                    std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName, bool aRestartRun )
 {
     int z, p, i, num_it, spinup;
-    int row, lurow, r, l, gridIndex;
+    int row, lurow, r, l;
     ofstream oFile;
     Timer timer;
     double *co2 = mCO2EmissData.getData();
@@ -441,39 +441,6 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
 
     coupleLog << "Case name is " << case_name  << endl;
     coupleLog << "Before period is advanced, Current E3SM Year is " << e3smYear << ", Current GCAM Year is " << gcamYear << endl;
-
-    // Log and write ELM-derived degree days if the pointer is not null,
-    // which indicates that the coupling is turned on for this variable
-    // and the data are being passed from ELM to GCAM
-    if ( aUseDegDays and aELMDegreeDays != nullptr ) {
-        coupleLog << "ELM degree days coupling is enabled for year " << e3smYear << endl;
-        // Write degree days to a diagnostic CSV file (lon x lat grid)
-        std::string dd_oname = std::string("elm_degree_days") + std::to_string(e3smYear) + std::string(".csv");
-        ofstream ddFile;
-        ddFile.open(dd_oname);
-        ddFile.setf(ios::fixed, ios::floatfield);
-        ddFile.precision(4);
-        ddFile << "lon_index,lat_index,degree_days" << endl;
-        int dd_count = 0;
-        double dd_sum = 0.0;
-        for (int k = 1; k <= *aNumLat; k++) {
-            for (int j = 1; j <= *aNumLon; j++) {
-                gridIndex = ( k - 1 ) * (*aNumLon) + ( j - 1 );
-                double dd_val = aELMDegreeDays[gridIndex];
-                if (dd_val != 0.0) {
-                    ddFile << j << "," << k << "," << dd_val << endl;
-                    dd_sum += dd_val;
-                    dd_count++;
-                }
-            }
-        }
-        ddFile.close();
-        if (dd_count > 0) {
-            coupleLog << "ELM degree days: wrote " << dd_count << " non-zero gridcells, mean = " << dd_sum / dd_count << endl;
-        } else {
-            coupleLog << "ELM degree days: all gridcell values are zero" << endl;
-        }
-    }
 
     // If this is the initial year 2015 then run spinup first
     // and write the base file data (or the base file itself)
