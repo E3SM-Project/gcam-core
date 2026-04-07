@@ -204,6 +204,8 @@ void DegreeDays::readRegionalMappingData(const std::string &aFileName)
         } // if (mReadSubregions)
 
     } // while (std::getline(data, line))
+
+    data.close();
 }
 
 /*!
@@ -549,5 +551,7 @@ int DegreeDays::readDegreeDays(const std::string &aFileName, std::vector<int> &a
         aRegions.push_back(region);
         aDegreeDaysVector.push_back(averageDegreeDays);       
     }
+
+    data.close();
     return static_cast<int>(aYears.size());
 }
