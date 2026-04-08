@@ -44,8 +44,10 @@
 class ASpatialData {
 public:
     ASpatialData(int aSize);
+    ASpatialData(const int aSize, const bool aReadSubregions);
     ~ASpatialData();
     virtual void readMapping(std::string aFileName);
+    virtual void readRegionalMappingData(const std::string &aFileName);
     virtual double readSpatialData(std::string aFileName, bool aHasLatLon, bool aHasID, bool aCalcTotal);
     virtual double readSpatialData(std::string aFileName, bool aHasLatLon, bool aHasID, bool aCalcTotal, double *aValueArray);
     virtual double readSpatialDataCSV(std::string aFileName, bool aHasLatLon, bool aHasID, bool aCalcTotal);
@@ -59,6 +61,19 @@ public:
     virtual std::vector<int> getIDVector();
     virtual std::vector<double> getLatVector();
     virtual std::vector<double> getLonVector();
+protected:
+    // Boolean indicating whether to read subregions in the mapping file. If false, subregions will be aggregated to their parent regions
+    bool mReadSubregions;
+
+    // Map grid cells to regions. Key is a string with longitude and latitude ("lon_lat").
+    // Key maps to a vector of strings containing the region and subregion. For example, "RegionA.Subregion1". 
+    // Note that this map will contain more than lat * lon entries since some grid cells map to multiple regions
+    std::map<std::string, std::vector<std::string>> mRegionMapping;
+    
+    // Map region weights (these indicate the fraction of a grid cell assigned to each region)
+    // Key is a pair indicating the grid cell and the region/subregion.
+    // Key maps to a double representing the fraction of the grid cell in that region/subregion
+    std::map<std::pair<std::string,std::string>, double> mRegionWeights;
 private:
     std::vector<double> mValueVector;
     std::vector<double> mLatVector;
