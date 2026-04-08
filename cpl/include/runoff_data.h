@@ -1,5 +1,5 @@
-#ifndef __DEGREE_DAYS__
-#define __DEGREE_DAYS__
+#ifndef __RUNOFF_DATA__
+#define __RUNOFF_DATA__
 
 /*
  * LEGAL NOTICE
@@ -45,29 +45,29 @@
 #include "util/base/include/auto_file.h"
 #include "../include/aspatial_data.h"
 
-class DegreeDays : public ASpatialData 
+class RunoffData : public ASpatialData 
 {
     public:
-        DegreeDays(const int aNumLon, const int aNumLat, const bool aReadSubregions);
+        RunoffData(const int aNumLon, const int aNumLat, const bool aReadSubregions);
 
-        ~DegreeDays();
+        ~RunoffData();
 
-        void aggregateDegreeDays(const int aGCAMYear, const double *const aELMArea, const double *const aELMDegreeDays,  
-            const double *const aPopDensity, const double *const aELMLandFrac, std::vector<int> &aYears, std::vector<std::string> &aRegions, 
-            std::vector<double> &aDegreeDaysVector, int &aNumValues);
+        void aggregateRunoffData(const int aGCAMYear, const double *const aELMArea, const double *const aELMRunoffData,  
+            const double *const aELMLandFrac, std::vector<int> &aYears, std::vector<std::string> &aRegions, 
+            std::vector<std::string> &aBasins, std::vector<double> &aRunoffDataVector, int &aNumValues);
 
-        void createDegreeDaysVectors(const int aGCAMYear, std::vector<int> &aYears, std::vector<std::string> &aRegions,
-                            std::vector<double> &aDegreeDaysVector, const std::map<std::string, double> &aDegreeDaysMap);
+        void createRunoffDataVectors(const int aGCAMYear, std::vector<int> &aYears, std::vector<std::string> &aRegions,
+            std::vector<std::string> &aBasins, std::vector<double> &aRunoffDataVector, const std::map<std::string, double> &aRunoffDataMap);
 
-        void writeDegreeDays(const std::string &aFileName, const std::vector<int> &aYears, const std::vector<std::string> &aRegions,
-                const std::vector<double> &aDegreeDaysVector, const int aLength);
+        void writeRunoffData(const std::string &aFileName, const std::vector<int> &aYears, const std::vector<std::string> &aRegions,
+            const std::vector<std::string> &aBasins, const std::vector<double> &aRunoffDataVector, const int aLength);
 
-        int readDegreeDays(const std::string &aFileName, std::vector<int> &aYears, std::vector<std::string> &aRegions,
-                std::vector<double> &aDegreeDaysVector);
+        int readRunoffData(const std::string &aFileName, std::vector<int> &aYears, std::vector<std::string> &aRegions,
+            std::vector<std::string> &aBasins, std::vector<double> &aRunoffDataVector);
     private:    
         // Number of latitude and longitude values. Storing these so they do not have to be passed to every method
         int mNumLat;
         int mNumLon;
 };
 
-#endif // __DEGREE_DAYS__
+#endif // __RUNOFF_DATA__

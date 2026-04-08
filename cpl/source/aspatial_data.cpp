@@ -358,8 +358,8 @@ void ASpatialData::writeSpatialData(std::string aFileName, bool aWriteID) {
  * **Example CSV:**
  * \code
  * region_id,glu_id,lon,lat,region,subregion,weight
- * 1,1,144,96,"USA","Northwest",1.0
- * 2,2,144,97,"USA","Northwest",0.6
+ * 1,1,144,96,"USA","Mississippi",1.0
+ * 2,2,144,97,"USA","Mississippi",0.6
  * 2,2,144,97,"Canada","BritishColumbia",0.4
  * \endcode
  * 
@@ -367,7 +367,7 @@ void ASpatialData::writeSpatialData(std::string aFileName, bool aWriteID) {
  * 
  * 1. `mRegionMapping`: Maps grid cell ID to list of regions
  *    - Key: "lon_lat" (e.g., "144_96")
- *    - Value: Vector of region IDs (e.g., ["USA.Northwest", "Canada.BritishColumbia"])
+ *    - Value: Vector of region IDs (e.g., ["USA.Mississippi", "Canada.BritishColumbia"])
  *    - A grid cell may map to multiple regions if it straddles a boundary
  * 
  * 2. `mRegionWeights`: Maps (grid cell, region) pair to fractional weight
@@ -431,7 +431,7 @@ void ASpatialData::readRegionalMappingData(const std::string &aFileName)
             // Remove quotes from subregion name, if they exist. TODO: Also remove spaces?
             subregion.erase( remove( subregion.begin(), subregion.end(), '\"' ), subregion.end() );
 
-            // Example region ID: "USA.Northwest", where "USA" is the region and "Northwest" is the subregion (e.g., basin, state, or other sub-regional unit)
+            // Example region ID: "USA.Mississippi", where "USA" is the region and "Mississippi" is the subregion (e.g., basin, state, or other sub-regional unit)
             regID = region + "." + subregion;
 
             // Add region ID to the mapping vector. Note that there maybe more than one regID per gridID (hence, a vector). If gridID is not found, this will 
@@ -442,7 +442,7 @@ void ASpatialData::readRegionalMappingData(const std::string &aFileName)
             std::getline(iss, token, ',');
             weight = std::stod(token);
 
-            // If reading subregions, then the key is the specific region-subregion combination (e.g., "USA.Northwest"), 
+            // If reading subregions, then the key is the specific region-subregion combination (e.g., "USA.Mississippi"), 
             // and it will be unique, so we can just add the entry to the map. This will also create the map entry if it does not already exist
             mRegionWeights[std::make_pair(gridID, regID)] = weight;
         }

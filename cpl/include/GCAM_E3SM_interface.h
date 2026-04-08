@@ -17,6 +17,7 @@
 #include "../include/emiss_downscale.h"
 #include "../include/remap_data.h"
 #include "../include/degree_days.h"
+#include "../include/runoff_data.h"
 
 // forward declarations
 class Region;
@@ -33,10 +34,12 @@ public:
     void runGCAM(int *yyyymmdd, double *gcamoluc, double *gcamoemiss, std::string aBaseLucGcamFileName, std::string aBaseCO2GcamFileName, bool aSpinup,
                  double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
                  const double *const aELMDegreeDays, const double *const aPopDensity, const double *const aELMLandFrac,
+                 const double *const aELMRunoffData,
                  int *aNumLon, int *aNumLat, int *aNumPFT, int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod,
                   std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars,  std::string aScalarSourceDir, bool aWriteScalars, 
                   const bool aReadDegreeDays, const bool aWriteDegreeDays,
-                 bool aScaleAgYield, bool aScaleCarbon, std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName, bool aRestartRun);
+                 const bool aReadRunoffData, const bool aWriteRunoffData, bool aScaleAgYield, bool aScaleCarbon,                 
+                 std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName, bool aRestartRun);
 
     void setLandProductivityScalingGCAM(int *yyyymmdd, double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
                         int *aNumLon, int *aNumLat, int *aNumPFT, std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars, std::string aScalarSourceDir,
@@ -45,6 +48,10 @@ public:
     void setDegreeDaysGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMDegreeDays,
                            const double *const aPopDensity, const double *const aELMLandFrac, const int *aNumLon, const int *aNumLat,
                            const std::string &aMappingFile, const bool aReadDegreeDays, const bool aWriteDegreeDays);
+
+    void setRunoffDataGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMRunoffData,
+                           const double *const aELMLandFrac, const int *aNumLon, const int *aNumLat,
+                           const std::string &aMappingFile, const bool aReadRunoffData, const bool aWriteRunoffData);
     
     void downscaleEmissionsGCAM(double *gcamoemiss,
                                 double *gcamoco2sfcjan, double *gcamoco2sfcfeb, double *gcamoco2sfcmar, double *gcamoco2sfcapr,

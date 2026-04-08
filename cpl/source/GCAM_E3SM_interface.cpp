@@ -408,9 +408,11 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
                                    std::string aBaseLucGcamFileName, std::string aBaseCO2GcamFileName, bool aSpinup,
                                    double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
                                    const double *const aELMDegreeDays, const double *const aPopDensity, const double *const aELMLandFrac, 
+                                   const double *const aELMRunoffData,
                                    int *aNumLon, int *aNumLat, int *aNumPFT, int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod,
                                    std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars,  std::string aScalarSourceDir,
-                                   bool aWriteScalars, bool aReadDegreeDays, bool aWriteDegreeDays, bool aScaleAgYield, bool aScaleCarbon,
+                                   bool aWriteScalars, bool aReadDegreeDays, bool aWriteDegreeDays, bool aReadRunoffData, bool aWriteRunoffData, 
+                                   bool aScaleAgYield, bool aScaleCarbon,
                                    std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName, bool aRestartRun )
 {
     int z, p, i, num_it, spinup;
@@ -515,7 +517,7 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
                 system(command.c_str());
             }
 
-            // now set scalars and heating/cooling degree days for the current period
+            // now set scalars, heating/cooling degree days, and water runoff for the current period
             // the scalars function checks the e3smYear for the first coupled year (hardcoded to 2016)
             // this is just so scalars are not calculated in the start year of 2015
             // try doing this check here instead
@@ -526,6 +528,9 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
                 
                 setDegreeDaysGCAM(gcamYear, aELMArea, aELMDegreeDays, aPopDensity, aELMLandFrac, aNumLon, aNumLat, 
                     aMappingFile, aReadDegreeDays, aWriteDegreeDays);
+
+                setRunoffDataGCAM(gcamYear, aELMArea, aELMRunoffData, aELMLandFrac, aNumLon, aNumLat, 
+                    aMappingFile, aReadRunoffData, aWriteRunoffData);
             }
 
             // now run the current period
@@ -985,7 +990,6 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
     else 
     {
         coupleLog << "Calculating degree days from E3SM gridded data" << std::endl;
-        // Note: aggregateDegreeDays handles ONE type at a time
         degreeDays.aggregateDegreeDays(aGCAMYear, aELMArea, aELMDegreeDays, aPopDensity, aELMLandFrac,
                                        degreeDaysYears, degreeDaysRegions, degreeDaysValues, numDegreeDayValues);
         coupleLog << "Calculated " << numDegreeDayValues << " degree day regional values" << std::endl;
@@ -1021,36 +1025,119 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
     }
 
     // The SetDataHelper constructor expects 5 parameters, with the 3rd parameter being land techs (crop + basin names) in the case of carbon scalers.
-    // For degree days, we can use a vector with the same string (either "comm heating" or "comm cooling") for all records.
+    // For degree days, we can use a vector with the same string (either "comm heating" or "comm cooling") for all records
     std::vector<std::string> degreeDaysService(degreeDaysRegions.size(), "comm heating");
 
     // Set heating degree days in GCAM's building sector. 
-    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly.
+    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly
     coupleLog << "Setting HDD in GCAM commercial buildings, numDegreeDayValues = " << numDegreeDayValues << std::endl;
     SetDataHelper setHDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, hddValues,  
         "world/region[+name]/gcam-consumer/nodeInput/building-node-input/thermal-building-service-input[+name]/degree-days");
     setHDD.run(runner->getInternalScenario());
 
-    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly.
+    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly
     std::fill(degreeDaysService.begin(), degreeDaysService.end(), "comm cooling");
     coupleLog << "Setting CDD in GCAM commercial buildings, numDegreeDayValues = " << numDegreeDayValues << std::endl;
     SetDataHelper setCDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, cddValues,  
         "world/region[+name]/gcam-consumer/nodeInput/building-node-input/thermal-building-service-input[+name]/degree-days");
     setCDD.run(runner->getInternalScenario());
 
-    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly.
+    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly
     std::fill(degreeDaysService.begin(), degreeDaysService.end(), "resid heating");
     setHDD.setLandTechColumn(degreeDaysService);
     coupleLog << "Setting HDD in GCAM residential buildings, numDegreeDayValues = " << numDegreeDayValues << std::endl;
     setHDD.run(runner->getInternalScenario());
 
-    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly.
+    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly
     std::fill(degreeDaysService.begin(), degreeDaysService.end(), "resid cooling");
     setCDD.setLandTechColumn(degreeDaysService);
     coupleLog << "Setting CDD in GCAM residential buildings, numDegreeDayValues = " << numDegreeDayValues << std::endl;
     setCDD.run(runner->getInternalScenario());
     
     coupleLog << "Finished setting degree days in GCAM" << std::endl;
+}
+
+/*!
+ * \brief Process and set water runoff data from E3SM to GCAM
+ * \author Philip Myint
+ * \details 
+ * This method aggregates gridded water runoff data from E3SM to GCAM's 
+ * basins using land area and fraction weighting. The aggregated values are then passed to 
+ * GCAM's {TODO: put write sector here} sector, to drive water demand/supply.
+ * 
+ * The method can either:
+ * 1. Read runoff data from pre-calculated files (if aReadRunoffData = true)
+ * 2. Calculate runoff data from E3SM gridded data (if aReadRunoffData = false)
+ * 
+ * Similar to carbon scalers, this supports optional file I/O for diagnostics and restart.
+ * 
+ * \param aGCAMYear Current GCAM year
+ * \param aELMArea Grid cell areas (km²)
+ * \param aELMRunoffData Runoff data from E3SM (mm/s per grid cell)
+ * \param aELMLandFrac Land fraction (0-1) for each grid cell
+ * \param aNumLon Integer pointer for the number of longitude grid points
+ * \param aNumLat Integer pointer for the number of latitude grid points
+ * \param aMappingFile Path to regional mapping file
+ * \param aReadRunoffData If true, read from files instead of calculating
+ * \param aWriteRunoffData If true, write calculated values to diagnostic files
+ * 
+ */
+void GCAM_E3SM_interface::setRunoffDataGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMRunoffData, 
+    const double *const aELMLandFrac, const int *aNumLon, const int *aNumLat, 
+    const std::string &aMappingFile, const bool aReadRunoffData, const bool aWriteRunoffData)
+{
+    ILogger& coupleLog = ILogger::getLogger("coupling_log");
+    coupleLog.setLevel(ILogger::NOTICE);
+    
+    // Declare vectors to store the years, region IDs, basins, and values for runoff data
+    std::vector<int> runoffYears;
+    std::vector<std::string> runoffRegions;
+    std::vector<std::string> runoffBasins;
+    std::vector<double> runoffValues;
+    int numRunoffValues = 0;
+    
+    // Create RunoffData object (true = aggregate to basins [subregion] level).
+    // Derefences the pointers before passing them in as arguments
+    RunoffData runoffData(*aNumLon, *aNumLat, true);
+    
+    // Read regional mapping (needed for both read and calculate paths)
+    runoffData.readRegionalMappingData(aMappingFile);
+    coupleLog << "Finished reading regional mapping data for runoff" << std::endl;
+    
+    // Process runoff data. TODO: Consider taking file name as an argument, rather than hard coding
+    if (aReadRunoffData) 
+    {
+        std::string runoffFile = "./runoff_" + std::to_string(aGCAMYear) + ".csv";
+        coupleLog << "Reading runoff data from file: " << runoffFile << std::endl;
+        numRunoffValues = runoffData.readRunoffData(runoffFile, runoffYears, runoffRegions, runoffBasins, runoffValues);
+        coupleLog << "Read " << numRunoffValues << " runoff regional values" << std::endl;
+    } 
+    else 
+    {
+        coupleLog << "Calculating runoff data from E3SM gridded data" << std::endl;
+        runoffData.aggregateRunoffData(aGCAMYear, aELMArea, aELMRunoffData, aELMLandFrac,
+                                       runoffYears, runoffRegions, runoffBasins, runoffValues, numRunoffValues);
+        coupleLog << "Calculated " << numRunoffValues << " runoff regional values" << std::endl;
+    }
+    
+    // Optional: write runoff data to file for diagnostics/restart. TODO: Consider taking file name as an argument, rather than hard coding
+    if (aWriteRunoffData && !aReadRunoffData) 
+    {
+        std::string runoffFile = "./runoff_" + std::to_string(aGCAMYear) + ".csv";
+        runoffData.writeRunoffData(runoffFile, runoffYears, runoffRegions, runoffBasins, runoffValues, numRunoffValues);
+        coupleLog << "Wrote runoff data to file: " << runoffFile << std::endl;
+    }
+
+    // The SetDataHelper constructor expects 5 parameters, with the 3rd parameter being land techs (crop + basin names) in the case of carbon scalers.
+    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly
+    coupleLog << "Setting Runoff in GCAM water-supply basins, numRunoffValues = " << numRunoffValues << std::endl;
+
+    SetDataHelper setRunoff(runoffYears, runoffRegions, runoffBasins, runoffValues,  
+        "world/region[+name]/renewable-resource[+name]/sub-renewable-resource/maxSubResource");
+
+    setRunoff.run(runner->getInternalScenario());
+    
+    coupleLog << "Finished setting runoff data in GCAM" << std::endl;
 }
 
 void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
