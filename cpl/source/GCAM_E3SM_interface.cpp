@@ -1024,30 +1024,27 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
     }
 
     // The SetDataHelper constructor expects 5 parameters, with the 3rd parameter being land techs (crop + basin names) in the case of carbon scalers.
-    // For degree days, we can use a vector with the same string (either "comm heating" or "comm cooling") for all records
+    // For degree days, we can use a vector with the same string (e.g., "comm heating", "comm cooling", "resid heating") for all records
     std::vector<std::string> degreeDaysService(degreeDaysRegions.size(), "comm heating");
 
     // Set heating degree days in GCAM's building sector. 
-    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly
+    // TODO: This XML path and the ones below allow a complete run out to 2100, but should still verify that the GCAM database was updated properly
     coupleLog << "Setting HDD in GCAM commercial buildings, numDegreeDayValues = " << numDegreeDayValues << std::endl;
     SetDataHelper setHDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, hddValues,  
         "world/region[+name]/gcam-consumer/nodeInput/building-node-input/thermal-building-service-input[+name]/degree-days");
     setHDD.run(runner->getInternalScenario());
 
-    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly
     std::fill(degreeDaysService.begin(), degreeDaysService.end(), "comm cooling");
     coupleLog << "Setting CDD in GCAM commercial buildings, numDegreeDayValues = " << numDegreeDayValues << std::endl;
     SetDataHelper setCDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, cddValues,  
         "world/region[+name]/gcam-consumer/nodeInput/building-node-input/thermal-building-service-input[+name]/degree-days");
     setCDD.run(runner->getInternalScenario());
 
-    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly
     std::fill(degreeDaysService.begin(), degreeDaysService.end(), "resid heating");
     setHDD.setLandTechColumn(degreeDaysService);
     coupleLog << "Setting HDD in GCAM residential buildings, numDegreeDayValues = " << numDegreeDayValues << std::endl;
     setHDD.run(runner->getInternalScenario());
 
-    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly
     std::fill(degreeDaysService.begin(), degreeDaysService.end(), "resid cooling");
     setCDD.setLandTechColumn(degreeDaysService);
     coupleLog << "Setting CDD in GCAM residential buildings, numDegreeDayValues = " << numDegreeDayValues << std::endl;
@@ -1128,7 +1125,8 @@ void GCAM_E3SM_interface::setRunoffDataGCAM(const int aGCAMYear, const double *c
     }
 
     // The SetDataHelper constructor expects 5 parameters, with the 3rd parameter being land techs (crop + basin names) in the case of carbon scalers.
-    // TODO: This XML path allows a complete run out to 2100, but should still verify that GCAM database was updated properly
+    // For runoff data, we can use the basin names for this 3rd parameter.
+    // TODO: This XML path allows a complete run out to 2100, but should still verify that the GCAM database was updated properly
     coupleLog << "Setting Runoff in GCAM water-supply basins, numRunoffValues = " << numRunoffValues << std::endl;
 
     SetDataHelper setRunoff(runoffYears, runoffRegions, runoffBasins, runoffValues,  
