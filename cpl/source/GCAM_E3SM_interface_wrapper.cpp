@@ -93,7 +93,7 @@ extern "C" {
                               char *aPOPIIASAFileName, char *aGDPIIASAFileName,
                               char *aPOPGCAMFileName, char *aGDPGCAMFileName, char *aCO2GCAMFileName,
                               int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod, int *aNumLon, int *aNumLat,
-                              int *aWriteCO2, int *aCurrYear, char *aCO2DownscalingMethod) {
+                              int *aWriteCO2, int *aCurrYear, char *aCO2DownscalingMethod, int *aUseGCAMUSA) {
       
       // Convert to string - fortran doesn't handle string
       //std::string BaseCO2SfcFile(aBaseCO2SfcFile);
@@ -112,6 +112,7 @@ extern "C" {
       
       // Convert to bool - fortran doesn't have a bool
       bool writeCO2 = *aWriteCO2 == 1 ? true : false;
+      bool useGCAMUSA = *aUseGCAMUSA == 1 ? true : false;
     
       p_obj->downscaleEmissionsGCAM(gcamoemiss,
                                   gcamoco2sfcjan, gcamoco2sfcfeb, gcamoco2sfcmar, gcamoco2sfcapr,
@@ -127,7 +128,7 @@ extern "C" {
                                   POPIIASAFileName,GDPIIASAFileName,
                                   POPGCAMFileName,GDPGCAMFileName,CO2GCAMFileName,
                                   aNumReg, aNumCty, aNumSector, aNumPeriod, aNumLon, aNumLat,
-                                  writeCO2, aCurrYear, CO2DownscalingMethod);
+                                  writeCO2, aCurrYear, CO2DownscalingMethod, useGCAMUSA);
 }
 
     
