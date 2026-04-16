@@ -50,7 +50,7 @@ public:
                                 std::string aPOPIIASAFileName, std::string aGDPIIASAFileName,
                                 std::string aPOPGCAMFileName, std::string aGDPGCAMFileName, std::string aCO2GCAMFileName,
                                 int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod, int *aNumLon, int *aNumLat, bool aWriteCO2, int *aCurrYear,
-                                std::string CO2DownscalingMethod);
+                                std::string CO2DownscalingMethod, bool aUseGCAMUSA);
     void separateSurfaceMonthlyEmissions(EmissDownscale surfaceCO2, EmissDownscale shipmentCO2, double *gcamoco2sfcjan, double *gcamoco2sfcfeb, double *gcamoco2sfcmar,
                                                               double *gcamoco2sfcapr, double *gcamoco2sfcmay, double *gcamoco2sfcjun,
                                                               double *gcamoco2sfcjul, double *gcamoco2sfcaug, double *gcamoco2sfcsep,
