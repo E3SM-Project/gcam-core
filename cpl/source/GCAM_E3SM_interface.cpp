@@ -1309,6 +1309,7 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
         {
             surfaceCO2.mCurrYearEmissVector[i] = surfaceCO2_region.mCurrYearEmissVector[i] + surfaceCO2_state.mCurrYearEmissVector[i];
         }
+        surfaceCO2.setValueVector(surfaceCO2.mCurrYearEmissVector);
     }
 
     coupleLog << "after surface downscaling" << endl;
