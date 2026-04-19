@@ -1067,8 +1067,11 @@ void EmissDownscale::downscaleSurfaceCO2EmissionsFromRegion2Grid(double *aCurrYe
                     auto currReg = mRegionIDName.find(regID);
                     int regIndex = (*currReg).second - 1;
 
+                    if (aBaseYearEmissions_sfc[regIndex] > 0.0) {
                     scalar += aCurrYearEmissions[regIndex] / aBaseYearEmissions_sfc[regIndex] * scaling_factor[regIndex] * mRegionWeights[std::make_pair(gridID, regID)];
+                    }
                     weight += mRegionWeights[std::make_pair(gridID, regID)];
+                    
                 }
                 scalar = scalar / weight; // normalized by the total weight 
                 for (int mon = 1; mon <= mNumMon; mon++)
