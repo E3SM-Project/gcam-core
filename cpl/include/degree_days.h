@@ -52,18 +52,18 @@ class DegreeDays : public ASpatialData
 
         ~DegreeDays();
 
-        void aggregateDegreeDays(const int aGCAMYear, const double *const aELMArea, const double *const aELMDegreeDays,  
+        void aggregateDegreeDays(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD, const double *const aELMCDD,
             const double *const aPopDensity, const double *const aELMLandFrac, std::vector<int> &aYears, std::vector<std::string> &aRegions, 
-            std::vector<double> &aDegreeDaysVector, int &aNumValues);
+            std::vector<double> &aELMHDDVector, std::vector<double> &aELMCDDVector, int &aNumValues);
 
         void createDegreeDaysVectors(const int aGCAMYear, std::vector<int> &aYears, std::vector<std::string> &aRegions,
                             std::vector<double> &aDegreeDaysVector, const std::map<std::string, double> &aDegreeDaysMap);
 
         void writeDegreeDays(const std::string &aFileName, const std::vector<int> &aYears, const std::vector<std::string> &aRegions,
-                const std::vector<double> &aDegreeDaysVector, const int aLength);
+                const std::vector<double> &aHDDVector, const std::vector<double> &aCDDVector, const int aLength);
 
         int readDegreeDays(const std::string &aFileName, std::vector<int> &aYears, std::vector<std::string> &aRegions,
-                std::vector<double> &aDegreeDaysVector);
+                std::vector<double> &aHDDVector, std::vector<double> &aCDDVector);
     private:    
         // Number of latitude and longitude values. Storing these so they do not have to be passed to every method
         int mNumLat;

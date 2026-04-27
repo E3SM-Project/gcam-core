@@ -35,18 +35,17 @@ extern "C" {
       bool restartRun = *aRestartRun == 1 ? true : false;
       
     p_obj->initGCAM(yyyymmdd, CaseName, GCAMConfig, GCAM2ELMCO2Map, GCAM2ELMLUCMap, GCAM2ELMWHMap, GCAM2ELMCDENMap,
-                     BaseCO2GcamFileName, BaseCO2SfcFile, BaseCO2ShipFile, BaseCO2AirFile,
+                    BaseCO2GcamFileName, BaseCO2SfcFile, BaseCO2ShipFile, BaseCO2AirFile,
                     aELMArea, aNumLon, aNumLat, aNumReg, aNumSector, restartRun);
   }
 
   // Run GCAM
   void runcgcam_(int *yyyymmdd, double *gcamoluc, double *gcamoemiss, char* aBaseLucGcamFileName, char* aBaseCO2GcamFileName, int *aSpinup,
                  double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
-                 double *aELMDegreeDays, double *aPopDensity, double *aELMLandFrac,
-                 double *aELMRunoffData,
+                 double *aELMHDD, double *aELMCDD, double *aPopDensity, double *aELMLandFrac,
                  int *aNumLon, int *aNumLat, int *aNumPFT, int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod,
                  char* aMappingFile, int *aFirstCoupledYear, int *aReadScalars, char* aScalarSourceDir, int *aWriteScalars, int *aReadDegreeDays, int *aWriteDegreeDays,
-                 int *aReadRunoffData, int *aWriteRunoffData, int *aScaleAgYield, int *aScaleCarbon, char* aBaseNPPFile, char* aBaseHRFile, char* aBasePFTwtFile, int *aRestartRun) {
+                 int *aScaleAgYield, int *aScaleCarbon, char* aBaseNPPFile, char* aBaseHRFile, char* aBasePFTwtFile, int *aRestartRun) {
   
       // convert to strings and bools where appropriate
       std::string BaseLucGcamFileName(aBaseLucGcamFileName);
@@ -61,18 +60,16 @@ extern "C" {
       bool writeScalars = *aWriteScalars == 1 ? true : false;
       const bool readDegreeDays = *aReadDegreeDays == 1 ? true : false;
       const bool writeDegreeDays = *aWriteDegreeDays == 1 ? true : false;
-      const bool readRunoffData = *aReadRunoffData == 1 ? true : false;
-      const bool writeRunoffData = *aWriteRunoffData == 1 ? true : false;
       bool scaleAgYield = *aScaleAgYield == 1 ? true : false;
       bool scaleCarbon = *aScaleCarbon == 1 ? true : false;
       bool restartRun = *aRestartRun == 1 ? true : false;
   
       p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss, BaseLucGcamFileName, BaseCO2GcamFileName, Spinup,
                      aELMArea, aELMPFTFract, aELMNPP, aELMHR,
-                     aELMDegreeDays, aPopDensity, aELMLandFrac, aELMRunoffData,
+                     aELMHDD, aELMCDD, aPopDensity, aELMLandFrac, 
                      aNumLon, aNumLat, aNumPFT, aNumReg, aNumCty, aNumSector, aNumPeriod,
                      MappingFile, aFirstCoupledYear, readScalars, ScalarSourceDir, writeScalars, readDegreeDays, writeDegreeDays,
-                     readRunoffData, writeRunoffData, scaleAgYield, scaleCarbon, baseNPPFile, baseHRFile, basePFTwtFile, restartRun);
+                     scaleAgYield, scaleCarbon, baseNPPFile, baseHRFile, basePFTwtFile, restartRun);
   }
 
   // Downscale Emissions
