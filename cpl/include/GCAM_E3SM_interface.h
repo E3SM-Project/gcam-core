@@ -33,18 +33,17 @@ public:
 
     void runGCAM(int *yyyymmdd, double *gcamoluc, double *gcamoemiss, std::string aBaseLucGcamFileName, std::string aBaseCO2GcamFileName, bool aSpinup,
                  double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
-                 const double *const aELMDegreeDays, const double *const aPopDensity, const double *const aELMLandFrac,
-                 const double *const aELMRunoffData,
+                 const double *const aELMHDD, const double *const aELMCDD, const double *const aPopDensity, const double *const aELMLandFrac,
                  int *aNumLon, int *aNumLat, int *aNumPFT, int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod,
                  std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars, bool aWriteScalars, const bool aReadDegreeDays, const bool aWriteDegreeDays,
-                 const bool aReadRunoffData, const bool aWriteRunoffData, bool aScaleAgYield, bool aScaleCarbon,                 
+                 bool aScaleAgYield, bool aScaleCarbon,                 
                  std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName, bool aRestartRun);
 
     void setLandProductivityScalingGCAM(int *yyyymmdd, double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
                         int *aNumLon, int *aNumLat, int *aNumPFT, std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars, bool aWriteScalars,
                         bool aScaleAgYield, bool aScaleCarbon, std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName);
 
-    void setDegreeDaysGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMDegreeDays,
+    void setDegreeDaysGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD, const double *const aELMCDD,
                            const double *const aPopDensity, const double *const aELMLandFrac, const int *aNumLon, const int *aNumLat,
                            const std::string &aMappingFile, const bool aReadDegreeDays, const bool aWriteDegreeDays);
 

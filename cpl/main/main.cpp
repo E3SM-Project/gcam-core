@@ -99,7 +99,8 @@ int main( ) {
     std::string BASE_NPP_FILE = "../data/base_f09_annAvgMonthly_2010-2014_npp.csv";
     std::string BASE_HR_FILE = "../data/base_f09_annAvgMonthly_2010-2014_hr.csv";
     std::string BASE_PFT_FILE = "../data/base_f09_annAvgMonthly_2010-2014_pft_wt.csv";
-    std::string DEGREE_DAYS_FILE = "../data/degree_days.csv";
+    std::string HDD_FILE = "../data/hdd.csv";
+    std::string CDD_FILE = "../data/cdd.csv";
     std::string POP_DENSITY_FILE = "../data/pop_density.csv";
     std::string LAND_FRAC_FILE = "../data/land_frac.csv";
     std::string RUNOFF_DATA_FILE = "../data/runoff_data.csv";
@@ -331,7 +332,8 @@ if (false) {
     double *gcamipftfract = new double [(*NUM_LAT) * (*NUM_LON) * (*NUM_PFT)]();
     double *gcaminpp = new double [(*NUM_LAT) * (*NUM_LON) * (*NUM_PFT)]();
     double *gcamihr = new double [(*NUM_LAT) * (*NUM_LON) * (*NUM_PFT)]();
-    double *gcamdegreedays = new double [(*NUM_LAT) * (*NUM_LON)]();
+    double *gcamhdd = new double [(*NUM_LAT) * (*NUM_LON)]();
+    double *gcamcdd = new double [(*NUM_LAT) * (*NUM_LON)]();
     double *gcampopdensity = new double [(*NUM_LAT) * (*NUM_LON)]();
     double *gcamlandfrac = new double [(*NUM_LAT) * (*NUM_LON)]();
     double *gcamrunoffdata = new double [(*NUM_LAT) * (*NUM_LON)]();
@@ -399,9 +401,10 @@ if (false) {
                 // Read in PFT weight in grid cell
                 tempPFTData.readSpatialDataCSV(BASE_PFT_FILE, true, true, false, gcamipftfract);
 
-                // Read in degree day values for the grid cells
+                // Read in heating and cooling degree day values for the grid cells
                 ASpatialData tempDegreeDaysData((*NUM_LAT) * (*NUM_LON));
-                tempDegreeDaysData.readSpatialDataCSV(DEGREE_DAYS_FILE, true, true, false, gcamdegreedays);
+                tempDegreeDaysData.readSpatialDataCSV(HDD_FILE, true, true, false, gcamhdd);
+                tempDegreeDaysData.readSpatialDataCSV(CDD_FILE, true, true, false, gcamcdd);
 
                 // Read in population density values for the grid cells, where the area refers to the total area (both land and ocean) of the grid cell
                 tempDegreeDaysData.readSpatialDataCSV(POP_DENSITY_FILE, true, true, false, gcampopdensity);
@@ -416,12 +419,21 @@ if (false) {
 
             
             // Run model
+            /* TODO: Call this commented version involving runoff once ELM/EHC has been modified to pass runoff data to GCAM
             p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss,
                            BASE_GCAM_LU_WH_FILE, BASE_GCAM_CO2_FILE, GCAM_SPINUP, 
-                           gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamdegreedays, gcampopdensity, gcamlandfrac, gcamrunoffdata,
+                           gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamhdd, gcamcdd, gcampopdensity, gcamlandfrac, gcamrunoffdata,
                            NUM_LON, NUM_LAT, NUM_PFT, NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
                            ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, WRITE_SCALARS, READ_DEGREE_DAYS, WRITE_DEGREE_DAYS, 
                            READ_RUNOFF_DATA, WRITE_RUNOFF_DATA,
+                           ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE, RESTART_RUN);
+            */
+
+            p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss,
+                           BASE_GCAM_LU_WH_FILE, BASE_GCAM_CO2_FILE, GCAM_SPINUP, 
+                           gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamhdd, gcamcdd, gcampopdensity, gcamlandfrac,
+                           NUM_LON, NUM_LAT, NUM_PFT, NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
+                           ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, WRITE_SCALARS, READ_DEGREE_DAYS, WRITE_DEGREE_DAYS, 
                            ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE, RESTART_RUN);
 
 
@@ -471,7 +483,8 @@ if (false) {
 
             // Read in degree day values for the grid cells
             ASpatialData tempDegreeDaysData((*NUM_LAT) * (*NUM_LON));
-            tempDegreeDaysData.readSpatialDataCSV(DEGREE_DAYS_FILE, true, true, false, gcamdegreedays);
+            tempDegreeDaysData.readSpatialDataCSV(HDD_FILE, true, true, false, gcamhdd);
+            tempDegreeDaysData.readSpatialDataCSV(CDD_FILE, true, true, false, gcamcdd);
 
             // Read in population density values for the grid cells, where the area refers to the total area (both land and ocean) of the grid cell
             tempDegreeDaysData.readSpatialDataCSV(POP_DENSITY_FILE, true, true, false, gcampopdensity);
@@ -484,12 +497,21 @@ if (false) {
             tempRunoffData.readSpatialDataCSV(RUNOFF_DATA_FILE, true, true, false, gcamrunoffdata);
         }
         
+        /* TODO: Call this commented version involving runoff once ELM/EHC has been modified to pass runoff data to GCAM
+        p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss,
+                        BASE_GCAM_LU_WH_FILE, BASE_GCAM_CO2_FILE, GCAM_SPINUP, 
+                        gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamhdd, gcamcdd, gcampopdensity, gcamlandfrac, gcamrunoffdata,
+                        NUM_LON, NUM_LAT, NUM_PFT, NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
+                        ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, WRITE_SCALARS, READ_DEGREE_DAYS, WRITE_DEGREE_DAYS, 
+                        READ_RUNOFF_DATA, WRITE_RUNOFF_DATA,
+                        ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE, RESTART_RUN);
+        */
+
         p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss,
                            BASE_GCAM_LU_WH_FILE, BASE_GCAM_CO2_FILE, GCAM_SPINUP,
-                           gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamdegreedays, gcampopdensity, gcamlandfrac, gcamrunoffdata,
+                           gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamhdd, gcamcdd, gcampopdensity, gcamlandfrac, gcamrunoffdata,
                            NUM_LON, NUM_LAT, NUM_PFT, NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
                            ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, WRITE_SCALARS, READ_DEGREE_DAYS, WRITE_DEGREE_DAYS,
-                           READ_RUNOFF_DATA, WRITE_RUNOFF_DATA,
                            ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE, RESTART_RUN);
 
         /*
@@ -525,7 +547,8 @@ if (false) {
     delete [] gcamipftfract;
     delete [] gcaminpp;
     delete [] gcamihr;
-    delete [] gcamdegreedays;
+    delete [] gcamhdd;
+    delete [] gcamcdd;
     delete [] gcampopdensity;
     delete [] gcamlandfrac;
     delete [] gcamrunoffdata;
