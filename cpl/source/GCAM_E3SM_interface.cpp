@@ -408,7 +408,7 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
                                    std::string aBaseLucGcamFileName, std::string aBaseCO2GcamFileName, bool aSpinup,
                                    double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
                                    const double *const aELMHDD, const double *const aELMCDD, const double *const aPopDensity, 
-                                   const double *const aELMLandFrac, const double *const aELMRunoffData,
+                                   const double *const aELMLandFrac, 
                                    int *aNumLon, int *aNumLat, int *aNumPFT, int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod,
                                    std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars,  std::string aScalarSourceDir,
                                    bool aWriteScalars, bool aReadDegreeDays, bool aWriteDegreeDays, bool aScaleAgYield, bool aScaleCarbon,
