@@ -99,8 +99,8 @@ int main( ) {
     std::string BASE_NPP_FILE = "../data/base_f09_annAvgMonthly_2010-2014_npp.csv";
     std::string BASE_HR_FILE = "../data/base_f09_annAvgMonthly_2010-2014_hr.csv";
     std::string BASE_PFT_FILE = "../data/base_f09_annAvgMonthly_2010-2014_pft_wt.csv";
-    std::string HDD_FILE = "../data/hdd.csv";
-    std::string CDD_FILE = "../data/cdd.csv";
+    std::string HDD_FILE = "../data/degree_days_hdd.csv";
+    std::string CDD_FILE = "../data/degree_days_cdd.csv";
     std::string POP_DENSITY_FILE = "../data/pop_density.csv";
     std::string LAND_FRAC_FILE = "../data/land_frac.csv";
     std::string RUNOFF_DATA_FILE = "../data/runoff_data.csv";
@@ -509,7 +509,7 @@ if (false) {
 
         p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss,
                            BASE_GCAM_LU_WH_FILE, BASE_GCAM_CO2_FILE, GCAM_SPINUP,
-                           gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamhdd, gcamcdd, gcampopdensity, gcamlandfrac, gcamrunoffdata,
+                           gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamhdd, gcamcdd, gcampopdensity, gcamlandfrac,
                            NUM_LON, NUM_LAT, NUM_PFT, NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
                            ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, WRITE_SCALARS, READ_DEGREE_DAYS, WRITE_DEGREE_DAYS,
                            ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE, RESTART_RUN);
