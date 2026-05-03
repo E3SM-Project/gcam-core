@@ -36,6 +36,10 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include "util/logger/include/ilogger.h"
 
+#include "util/base/include/time_vector.h"           
+#include "containers/include/scenario.h"             
+#include "util/base/include/model_time.h"            
+
 using namespace std;
 
 class StringVecEquals : public AMatchesValue {
@@ -90,16 +94,25 @@ private:
 void SetDataHelper::run(Scenario* aScenario) {
     GCAMFusion<SetDataHelper> fusion(*this, mFilterSteps);
 
-    //ILogger& sdhLog = ILogger::getLogger( "SetDataHelper_log" );
-    //sdhLog.setLevel( ILogger::NOTICE );
+    ILogger& sdhLog = ILogger::getLogger( "SetDataHelper_log" );
+    sdhLog.setLevel( ILogger::NOTICE );
+
+    sdhLog << "========== FILTERSTEPS DEBUG ==========" << std::endl;
+    sdhLog << "Number of FilterSteps: " << mFilterSteps.size() << std::endl;
+    for (size_t i = 0; i < mFilterSteps.size(); ++i) {
+        sdhLog << "FilterStep[" << i << "]: dataName='" << mFilterSteps[i]->mDataName 
+               << "' isDescendant=" << mFilterSteps[i]->isDescendantStep()
+               << " mNoFilters=" << mFilterSteps[i]->mNoFilters << std::endl;
+    }
+    sdhLog << "========================================" << std::endl;
 
     mRow = 0;
     for(auto row : mDataVector) {
         /*
         sdhLog << "before filter mRow=" << mRow << " Region=" << mRegionColumn[mRow] << " LandTech=" << mLandTechColumn[mRow] << endl;
         sdhLog << " Year=" << mYearColumn[mRow] << " mDataVector scalar=" << mDataVector[mRow] << endl;
-        sdhLog << "mFilterSteps[1]region=" << boost::fusion::at_key<NamedFilter>(mFilterSteps[1]->mFilterMap)->mMatcher->matchesString(mRegionColumn[mRow]) << endl;
-        sdhLog << "mFilterSteps[2]technology=" << boost::fusion::at_key<NamedFilter>(mFilterSteps[4]->mFilterMap)->mMatcher->matchesString(mLandTechColumn[mRow]) << endl;
+        //sdhLog << "mFilterSteps[1]region=" << boost::fusion::at_key<NamedFilter>(mFilterSteps[1]->mFilterMap)->mMatcher->matchesString(mRegionColumn[mRow]) << endl;
+        //sdhLog << "mFilterSteps[2]technology=" << boost::fusion::at_key<NamedFilter>(mFilterSteps[4]->mFilterMap)->mMatcher->matchesString(mLandTechColumn[mRow]) << endl;
         */
         fusion.startFilter(aScenario);
         //sdhLog << "after filter mDataVector size =" << mDataVector.size() << endl;
@@ -121,13 +134,15 @@ void SetDataHelper::setLandTechColumn(const std::vector<std::string>& aLandTechC
 template<>
 void SetDataHelper::processData(double& aData) {
 
-    //ILogger& sdhLog = ILogger::getLogger( "SetDataHelper_log" );
-    //sdhLog.setLevel( ILogger::NOTICE );
+    /*
+    ILogger& sdhLog = ILogger::getLogger( "SetDataHelper_log" );
+    sdhLog.setLevel( ILogger::NOTICE );
 
-    //sdhLog << "double aData=" << aData << endl;
+    sdhLog << "double aData=" << aData << endl;
 
-    //sdhLog << "Region=" << mRegionColumn[mRow] << " LandTech=" << mLandTechColumn[mRow] << " Year=" << mYearColumn[mRow] << " mDataVector=" << mDataVector[mRow] << endl;
-
+    sdhLog << "Region=" << mRegionColumn[mRow] << " LandTech=" << mLandTechColumn[mRow] << " Year=" << mYearColumn[mRow] << " mDataVector=" << mDataVector[mRow] << endl;
+    */
+   
     aData = mDataVector[mRow];
 
     //sdhLog << "Region=" << mRegionColumn[mRow] << " LandTech=" << mLandTechColumn[mRow] << " Year=" << mYearColumn[mRow] << " aData=" << aData << endl;
@@ -150,6 +165,34 @@ void SetDataHelper::processData(Value& aData) {
     //   sdhLog << "Region=" << mRegionColumn[mRow] << " LandTech=" << mLandTechColumn[mRow] << " Year=" << mYearColumn[mRow] << " aData scalar=" << aData << endl;
     //}
 }
+
+template<>
+void SetDataHelper::processData(objects::PeriodVector<Value>& aData) {
+
+    /*
+    ILogger& sdhLog = ILogger::getLogger( "SetDataHelper_log" );
+    sdhLog.setLevel( ILogger::NOTICE );
+    
+    sdhLog << "PeriodVector processData called" << std::endl;
+    sdhLog << "Region=" << mRegionColumn[mRow] 
+           << " LandTech=" << mLandTechColumn[mRow] 
+           << " Year=" << mYearColumn[mRow] 
+           << " Value=" << mDataVector[mRow] << std::endl;
+    */
+    
+    // Get the model period from the year
+    extern Scenario* scenario;
+    const Modeltime* modeltime = scenario->getModeltime();
+    int period = modeltime->getyr_to_per(mYearColumn[mRow]);
+    
+    //sdhLog << "Setting period " << period << " (year " << mYearColumn[mRow] << ")" << std::endl;
+    
+    // Set the value for this specific period in the PeriodVector
+    aData[period].set(mDataVector[mRow]);
+    
+    //sdhLog << "Successfully set degree-days[" << period << "] = " << mDataVector[mRow] << std::endl;
+}
+
 template<>
 void SetDataHelper::processData(int& aData) {
     aData = mDataVector[mRow];
