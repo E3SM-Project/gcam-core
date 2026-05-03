@@ -124,7 +124,7 @@ protected:
         DEFINE_VARIABLE( SIMPLE, "internal-gains-scalar", mInternalGainsScalar, Value ),
         
         //! Degree days by period.
-	DEFINE_VARIABLE( ARRAY | STATE, "degree-days", mDegreeDays, objects::PeriodVector<Value> ),
+	    DEFINE_VARIABLE( ARRAY | STATE, "degree-days", mDegreeDays, objects::PeriodVector<Value> ),
         
         //! Demand function coefficients to capture base year thermal characteristics.
         DEFINE_VARIABLE( SIMPLE | STATE | NOT_PARSABLE, "coefficient", mCoefficient, Value )

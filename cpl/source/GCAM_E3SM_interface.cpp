@@ -1008,30 +1008,71 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
     // For degree days, we can use a vector with the same string (e.g., "comm heating", "comm cooling", "resid heating") for all records
     std::vector<std::string> degreeDaysService(degreeDaysRegions.size(), "comm heating");
 
-    // Set heating degree days in GCAM's building sector. 
-    // TODO: This XML path and the ones below allow a complete run out to 2100, but should still verify that the GCAM database was updated properly
-    coupleLog << "Setting HDD in GCAM commercial buildings, numDegreeDayValues = " << numDegreeDayValues << std::endl;
-    SetDataHelper setHDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, hddValues,  
-        "world/region[+name]//thermal-building-service-input[+name]/degree-days");
-    setHDD.run(runner->getInternalScenario());
+    coupleLog << "========== ABOUT TO CREATE SETDATAHELPER ==========" << std::endl;
+    coupleLog << "Creating setHDD object..." << std::endl;
 
-    std::fill(degreeDaysService.begin(), degreeDaysService.end(), "comm cooling");
-    coupleLog << "Setting CDD in GCAM commercial buildings, numDegreeDayValues = " << numDegreeDayValues << std::endl;
-    SetDataHelper setCDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, cddValues,  
-        "world/region[+name]//thermal-building-service-input[+name]/degree-days");
-    setCDD.run(runner->getInternalScenario());
+    try {
 
-    std::fill(degreeDaysService.begin(), degreeDaysService.end(), "resid heating");
-    setHDD.setLandTechColumn(degreeDaysService);
-    coupleLog << "Setting HDD in GCAM residential buildings, numDegreeDayValues = " << numDegreeDayValues << std::endl;
-    setHDD.run(runner->getInternalScenario());
+        coupleLog << "Validating vectors..." << std::endl;
+        for (size_t i = 0; i < hddValues.size(); ++i) {
+            if (!std::isfinite(hddValues[i])) {
+                coupleLog << "ERROR: hddValues[" << i << "] = " << hddValues[i] << " (not finite!)" << std::endl;
+            }
+            if (!std::isfinite(cddValues[i])) {
+                coupleLog << "ERROR: cddValues[" << i << "] = " << cddValues[i] << " (not finite!)" << std::endl;
+            }
+        }
+        coupleLog << "All vectors validated!" << std::endl;
 
-    std::fill(degreeDaysService.begin(), degreeDaysService.end(), "resid cooling");
-    setCDD.setLandTechColumn(degreeDaysService);
-    coupleLog << "Setting CDD in GCAM residential buildings, numDegreeDayValues = " << numDegreeDayValues << std::endl;
-    setCDD.run(runner->getInternalScenario());
-    
-    coupleLog << "Finished setting degree days in GCAM" << std::endl;
+        SetDataHelper setHDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, hddValues,  
+            "world/region[+name]//nodeInput[+name]/degree-days");
+        
+        coupleLog << "setHDD object created successfully!" << std::endl;
+        coupleLog << "Getting scenario pointer..." << std::endl;
+        
+        Scenario* scenario = runner->getInternalScenario();
+        
+        coupleLog << "Scenario pointer: " << scenario << std::endl;
+        
+        if (!scenario) {
+            coupleLog << "ERROR: Scenario is NULL!" << std::endl;
+            return;
+        }
+        
+        coupleLog << "About to call setHDD.run() for comm heating..." << std::endl;
+        coupleLog.flush();
+        setHDD.run(scenario);
+        coupleLog << "Comm heating HDD completed!" << std::endl;
+        
+        // CDD - Commercial
+        std::fill(degreeDaysService.begin(), degreeDaysService.end(), "comm cooling");
+        coupleLog << "Setting CDD in GCAM commercial buildings..." << std::endl;
+        SetDataHelper setCDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, cddValues,  
+            "world/region[+name]//nodeInput[+name]/degree-days");
+        setCDD.run(scenario);
+        coupleLog << "Comm cooling CDD completed!" << std::endl;
+        
+        // HDD - Residential
+        std::fill(degreeDaysService.begin(), degreeDaysService.end(), "resid heating");
+        setHDD.setLandTechColumn(degreeDaysService);
+        coupleLog << "Setting HDD in GCAM residential buildings..." << std::endl;
+        setHDD.run(scenario);
+        coupleLog << "Resid heating HDD completed!" << std::endl;
+        
+        // CDD - Residential  
+        std::fill(degreeDaysService.begin(), degreeDaysService.end(), "resid cooling");
+        setCDD.setLandTechColumn(degreeDaysService);
+        coupleLog << "Setting CDD in GCAM residential buildings..." << std::endl;
+        setCDD.run(scenario);
+        coupleLog << "Resid cooling CDD completed!" << std::endl;
+        
+    } catch (const std::exception& e) {
+        coupleLog << "EXCEPTION in setHDD: " << e.what() << std::endl;
+    } catch (...) {
+        coupleLog << "UNKNOWN EXCEPTION in setHDD!" << std::endl;
+    }
+
+    coupleLog << "========== SETDATAHELPER SECTION COMPLETED ==========" << std::endl;
 }
 
 /*!
