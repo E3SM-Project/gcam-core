@@ -177,7 +177,7 @@ void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aE
         if (populationInRegion > 0.0) 
         {
             // Calculate weighted average: total / population
-            aHDDMap[regID] = totalHDD[regID] / populationInRegion;
+            aHDDMap[regID] = std::abs(totalHDD[regID]) / populationInRegion;
             aCDDMap[regID] = totalCDD[regID] / populationInRegion;
         } 
         else 
