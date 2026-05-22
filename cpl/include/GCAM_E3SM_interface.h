@@ -17,7 +17,6 @@
 #include "../include/emiss_downscale.h"
 #include "../include/remap_data.h"
 #include "../include/degree_days.h"
-#include "../include/runoff_data.h"
 
 // forward declarations
 class Region;
@@ -48,10 +47,6 @@ public:
                            const double *const aPopDensity, const double *const aELMLandFrac, const int *aNumLon, const int *aNumLat,
                            const std::string &aMappingFile, const bool aReadDegreeDays, const bool aWriteDegreeDays);
 
-    void setRunoffDataGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMRunoffData,
-                           const double *const aELMLandFrac, const int *aNumLon, const int *aNumLat,
-                           const std::string &aMappingFile, const bool aReadRunoffData, const bool aWriteRunoffData);
-    
     void downscaleEmissionsGCAM(double *gcamoemiss,
                                 double *gcamoco2sfcjan, double *gcamoco2sfcfeb, double *gcamoco2sfcmar, double *gcamoco2sfcapr,
                                 double *gcamoco2sfcmay, double *gcamoco2sfcjun, double *gcamoco2sfcjul, double *gcamoco2sfcaug,

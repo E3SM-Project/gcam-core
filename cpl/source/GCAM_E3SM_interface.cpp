@@ -516,7 +516,7 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
                 system(command.c_str());
             }
 
-            // now set scalars, heating/cooling degree days, and water runoff for the current period
+            // now set scalars, heating/cooling degree days for the current period
             // the scalars function checks the e3smYear for the first coupled year (hardcoded to 2016)
             // this is just so scalars are not calculated in the start year of 2015
             // try doing this check here instead
@@ -528,9 +528,6 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
 
                 setDegreeDaysGCAM(gcamYear, aELMArea, aELMHDD, aELMCDD, aPopDensity, aELMLandFrac, aNumLon, aNumLat, 
                     aMappingFile, aReadDegreeDays, aWriteDegreeDays);
-
-                //setRunoffDataGCAM(gcamYear, aELMArea, aELMRunoffData, aELMLandFrac, aNumLon, aNumLat, 
-                //    aMappingFile, aReadRunoffData, aWriteRunoffData);
             }
 
             // now run the current period
@@ -1073,90 +1070,6 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
     }
 
     coupleLog << "========== SETDATAHELPER SECTION COMPLETED ==========" << std::endl;
-}
-
-/*!
- * \brief Process and set water runoff data from E3SM to GCAM
- * \author Philip Myint
- * \details 
- * This method aggregates gridded water runoff data from E3SM to GCAM's 
- * basins using land area and fraction weighting. The aggregated values are then passed to 
- * GCAM's {TODO: put write sector here} sector, to drive water demand/supply.
- * 
- * The method can either:
- * 1. Read runoff data from pre-calculated files (if aReadRunoffData = true)
- * 2. Calculate runoff data from E3SM gridded data (if aReadRunoffData = false)
- * 
- * Similar to carbon scalers, this supports optional file I/O for diagnostics and restart.
- * 
- * \param aGCAMYear Current GCAM year
- * \param aELMArea Grid cell areas (km²)
- * \param aELMRunoffData Runoff data from E3SM (mm/s per grid cell)
- * \param aELMLandFrac Land fraction (0-1) for each grid cell
- * \param aNumLon Integer pointer for the number of longitude grid points
- * \param aNumLat Integer pointer for the number of latitude grid points
- * \param aMappingFile Path to regional mapping file
- * \param aReadRunoffData If true, read from files instead of calculating
- * \param aWriteRunoffData If true, write calculated values to diagnostic files
- * 
- */
-void GCAM_E3SM_interface::setRunoffDataGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMRunoffData, 
-    const double *const aELMLandFrac, const int *aNumLon, const int *aNumLat, 
-    const std::string &aMappingFile, const bool aReadRunoffData, const bool aWriteRunoffData)
-{
-    ILogger& coupleLog = ILogger::getLogger("coupling_log");
-    coupleLog.setLevel(ILogger::NOTICE);
-    
-    // Declare vectors to store the years, region IDs, basins, and values for runoff data
-    std::vector<int> runoffYears;
-    std::vector<std::string> runoffRegions;
-    std::vector<std::string> runoffBasins;
-    std::vector<double> runoffValues;
-    int numRunoffValues = 0;
-    
-    // Create RunoffData object (true = aggregate to basins [subregion] level).
-    // Derefences the pointers before passing them in as arguments
-    RunoffData runoffData(*aNumLon, *aNumLat, true);
-    
-    // Read regional mapping (needed for both read and calculate paths)
-    runoffData.readRegionalMappingData(aMappingFile);
-    coupleLog << "Finished reading regional mapping data for runoff" << std::endl;
-    
-    // Process runoff data. TODO: Consider taking file name as an argument, rather than hard coding
-    if (aReadRunoffData) 
-    {
-        std::string runoffFile = "./runoff_" + std::to_string(aGCAMYear) + ".csv";
-        coupleLog << "Reading runoff data from file: " << runoffFile << std::endl;
-        numRunoffValues = runoffData.readRunoffData(runoffFile, runoffYears, runoffRegions, runoffBasins, runoffValues);
-        coupleLog << "Read " << numRunoffValues << " runoff regional values" << std::endl;
-    } 
-    else 
-    {
-        coupleLog << "Calculating runoff data from E3SM gridded data" << std::endl;
-        runoffData.aggregateRunoffData(aGCAMYear, aELMArea, aELMRunoffData, aELMLandFrac,
-                                       runoffYears, runoffRegions, runoffBasins, runoffValues, numRunoffValues);
-        coupleLog << "Calculated " << numRunoffValues << " runoff regional values" << std::endl;
-    }
-    
-    // Optional: write runoff data to file for diagnostics/restart. TODO: Consider taking file name as an argument, rather than hard coding
-    if (aWriteRunoffData && !aReadRunoffData) 
-    {
-        std::string runoffFile = "./runoff_" + std::to_string(aGCAMYear) + ".csv";
-        runoffData.writeRunoffData(runoffFile, runoffYears, runoffRegions, runoffBasins, runoffValues, numRunoffValues);
-        coupleLog << "Wrote runoff data to file: " << runoffFile << std::endl;
-    }
-
-    // The SetDataHelper constructor expects 5 parameters, with the 3rd parameter being land techs (crop + basin names) in the case of carbon scalers.
-    // For runoff data, we can use the basin names for this 3rd parameter.
-    // TODO: This XML path allows a complete run out to 2100, but should still verify that the GCAM database was updated properly
-    coupleLog << "Setting Runoff in GCAM water-supply basins, numRunoffValues = " << numRunoffValues << std::endl;
-
-    SetDataHelper setRunoff(runoffYears, runoffRegions, runoffBasins, runoffValues,  
-        "world/region[+name]/renewable-resource[+name]/sub-renewable-resource/maxSubResource");
-
-    setRunoff.run(runner->getInternalScenario());
-    
-    coupleLog << "Finished setting runoff data in GCAM" << std::endl;
 }
 
 void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,

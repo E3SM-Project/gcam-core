@@ -10,7 +10,7 @@ include $(PATHOFFSET)/build/linux/config.system
 include ${PATHOFFSET}/build/linux/configure.gcam
 
 OBJS       =  GCAM_E3SM_interface.o GCAM_E3SM_interface_wrapper.o get_data_helper.o remap_data.o set_data_helper.o \
-carbon_scalers.o degree_days.o runoff_data.o emiss_downscale.o aspatial_data.o 
+carbon_scalers.o degree_days.o emiss_downscale.o aspatial_data.o 
 
 cpl_dir:   ${OBJS}
 

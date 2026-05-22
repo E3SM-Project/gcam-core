@@ -104,7 +104,6 @@ int main( ) {
     std::string CDD_FILE = "../cpl/data/cdd.csv";
     std::string POP_DENSITY_FILE = "../cpl/data/pop_density.csv";
     std::string LAND_FRAC_FILE = "../cpl/data/land_frac.csv";
-    std::string RUNOFF_DATA_FILE = "../data/runoff_data.csv";
 
     // these are for Convergence downscaling
     std::string CO2_GCAM_FILE = "../data/GCAMRegionalCO2Data.csv";
@@ -126,8 +125,6 @@ int main( ) {
     bool GCAM_SPINUP = true;   // if true a gcam spinup will run; otherwise restarts from restart files
     bool READ_DEGREE_DAYS = false;
     bool WRITE_DEGREE_DAYS = true;
-    bool READ_RUNOFF_DATA = false;
-    bool WRITE_RUNOFF_DATA = true;
     bool RUN_GCAM = true;
 
     // Define coupling control variables
@@ -339,7 +336,6 @@ if (false) {
     double *gcamcdd = new double [(*NUM_LAT) * (*NUM_LON)]();
     double *gcampopdensity = new double [(*NUM_LAT) * (*NUM_LON)]();
     double *gcamlandfrac = new double [(*NUM_LAT) * (*NUM_LON)]();
-    double *gcamrunoffdata = new double [(*NUM_LAT) * (*NUM_LON)]();
     double *gcamoluc = new double [(*NUM_GCAM_LAND_REGIONS) * (*NUM_EHC2ELM_LANDTYPES)];
     double *gcamoemiss = new double [(*NUM_EMISS_SECTORS) * (*NUM_EMISS_REGIONS)](); // Emissions by sector and region (not gridded)
     double *gcamoco2sfcjan = new double [(*NUM_LAT) * (*NUM_LON)](); // Emissions data is monthly
@@ -414,24 +410,10 @@ if (false) {
 
                 // Read in land fractions (values range between 0 and 1) for the grid cells
                 tempDegreeDaysData.readSpatialDataCSV(LAND_FRAC_FILE, true, true, false, gcamlandfrac);
-
-                // Read in runoff data for the grid cells
-                ASpatialData tempRunoffData((*NUM_LAT) * (*NUM_LON));
-                tempRunoffData.readSpatialDataCSV(RUNOFF_DATA_FILE, true, true, false, gcamrunoffdata);
             }
 
             
             // Run model
-            /* TODO: Call this commented version involving runoff once ELM/EHC has been modified to pass runoff data to GCAM
-            p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss,
-                           BASE_GCAM_LU_WH_FILE, BASE_GCAM_CO2_FILE, GCAM_SPINUP, 
-                           gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamhdd, gcamcdd, gcampopdensity, gcamlandfrac, gcamrunoffdata,
-                           NUM_LON, NUM_LAT, NUM_PFT, NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
-                           ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, SCALAR_SOURCE_DIR, WRITE_SCALARS, READ_DEGREE_DAYS, WRITE_DEGREE_DAYS, 
-                           READ_RUNOFF_DATA, WRITE_RUNOFF_DATA,
-                           ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE, RESTART_RUN);
-            */
-
             p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss,
                            BASE_GCAM_LU_WH_FILE, BASE_GCAM_CO2_FILE, GCAM_SPINUP, 
                            gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamhdd, gcamcdd, gcampopdensity, gcamlandfrac,
@@ -495,22 +477,8 @@ if (false) {
 
             // Read in land fractions (values range between 0 and 1) for the grid cells
             tempDegreeDaysData.readSpatialDataCSV(LAND_FRAC_FILE, true, true, false, gcamlandfrac);
-
-            // Read in runoff data for the grid cells
-            ASpatialData tempRunoffData((*NUM_LAT) * (*NUM_LON));
-            tempRunoffData.readSpatialDataCSV(RUNOFF_DATA_FILE, true, true, false, gcamrunoffdata);
         }
         
-        /* TODO: Call this commented version involving runoff once ELM/EHC has been modified to pass runoff data to GCAM
-        p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss,
-                        BASE_GCAM_LU_WH_FILE, BASE_GCAM_CO2_FILE, GCAM_SPINUP, 
-                        gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamhdd, gcamcdd, gcampopdensity, gcamlandfrac, gcamrunoffdata,
-                        NUM_LON, NUM_LAT, NUM_PFT, NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
-                        ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, WRITE_SCALARS, READ_DEGREE_DAYS, WRITE_DEGREE_DAYS, 
-                        READ_RUNOFF_DATA, WRITE_RUNOFF_DATA,
-                        ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE, RESTART_RUN);
-        */
-
         p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss,
                            BASE_GCAM_LU_WH_FILE, BASE_GCAM_CO2_FILE, GCAM_SPINUP,
                            gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamhdd, gcamcdd, gcampopdensity, gcamlandfrac,
@@ -556,7 +524,6 @@ if (false) {
     delete [] gcamcdd;
     delete [] gcampopdensity;
     delete [] gcamlandfrac;
-    delete [] gcamrunoffdata;
     delete [] gcamoluc;
     delete [] gcamoemiss;
     delete [] gcamoco2sfcjan;
