@@ -123,14 +123,15 @@ int main( ) {
     bool WRITE_CO2 = true; // if true will write to a file
     bool WRITE_SCALARS = true; // if true will write to a file
     bool GCAM_SPINUP = true;   // if true a gcam spinup will run; otherwise restarts from restart files
-    bool READ_DEGREE_DAYS = false;
-    bool WRITE_DEGREE_DAYS = true;
+    bool READ_HDD_CDD = false;
+    bool WRITE_HDD_CDD = true;
     bool RUN_GCAM = true;
 
     // Define coupling control variables
     // These booleans define what is passed between GCAM & E3SM.
     bool ELM_EHC_AGYIELD_SCALING = true; // If TRUE, changes in land productivity from ELM scale ag yield in GCAM.
     bool ELM_EHC_CARBON_SCALING = true; // If TRUE, changes in land productivity from ELM scale carbon density in GCAM.
+    bool ELM_EHC_HDD_CDD = true; // If TRUE, changes HDD CDD passed from ELM to GCAM.
     bool EHC_EAM_CO2_EMISSIONS = true; // If TRUE, energy system CO2 is passed from GCAM to EAM.
     
     // Define size control variables
@@ -259,14 +260,14 @@ if (false) {
             SURFACE_CO2_DOWNSCALING_METHOD = value;
         } else if ( name == "READ_SCALARS" ) {
             istringstream(value) >> std::boolalpha >> READ_SCALARS;
-        } else if ( name == "READ_DEGREE_DAYS" ) {
-            istringstream(value) >> std::boolalpha >> READ_DEGREE_DAYS;
+        } else if ( name == "READ_HDD_CDD" ) {
+            istringstream(value) >> std::boolalpha >> READ_HDD_CDD;
         } else if ( name == "WRITE_CO2" ) {
             istringstream(value) >> std::boolalpha >> WRITE_CO2;
         } else if ( name == "WRITE_SCALARS" ) {
             istringstream(value) >> std::boolalpha >> WRITE_SCALARS;
-        } else if ( name == "WRITE_DEGREE_DAYS" ) {
-            istringstream(value) >> std::boolalpha >> WRITE_DEGREE_DAYS;
+        } else if ( name == "WRITE_HDD_CDD" ) {
+            istringstream(value) >> std::boolalpha >> WRITE_HDD_CDD;
         } else if ( name == "GCAM_SPINUP" ) {
             istringstream(value) >> std::boolalpha >> GCAM_SPINUP;
         } else if ( name == "RUN_GCAM" ) {
@@ -275,6 +276,8 @@ if (false) {
             istringstream(value) >> std::boolalpha >> ELM_EHC_AGYIELD_SCALING;
         } else if ( name == "ELM_EHC_CARBON_SCALING" ) {
             istringstream(value) >> std::boolalpha >> ELM_EHC_CARBON_SCALING;
+        } else if ( name == "ELM_EHC_HDD_CDD" ) {
+            istringstream(value) >> std::boolalpha >> ELM_EHC_HDD_CDD;
         } else if ( name == "EHC_EAM_CO2_EMISSIONS" ) {
             istringstream(value) >> std::boolalpha >> EHC_EAM_CO2_EMISSIONS;
         } else if ( name == "NUM_LAT" ) {
@@ -418,8 +421,8 @@ if (false) {
                            BASE_GCAM_LU_WH_FILE, BASE_GCAM_CO2_FILE, GCAM_SPINUP, 
                            gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamhdd, gcamcdd, gcampopdensity, gcamlandfrac,
                            NUM_LON, NUM_LAT, NUM_PFT, NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
-                           ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, WRITE_SCALARS, READ_DEGREE_DAYS, WRITE_DEGREE_DAYS, 
-                           ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE, RESTART_RUN);
+                           ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, WRITE_SCALARS, READ_HDD_CDD, WRITE_HDD_CDD,
+                           ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, ELM_EHC_HDD_CDD, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE, RESTART_RUN);
 
 
             // TODO: Verify that removal of the following is correct: BASE_CO2_SURFACE_FILE, BASE_CO2EMISS_SURFACE, BASE_CO2_AIRCRAFT_FILE, BASE_CO2EMISS_AIRCRAFT,
@@ -483,8 +486,8 @@ if (false) {
                            BASE_GCAM_LU_WH_FILE, BASE_GCAM_CO2_FILE, GCAM_SPINUP,
                            gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamhdd, gcamcdd, gcampopdensity, gcamlandfrac,
                            NUM_LON, NUM_LAT, NUM_PFT, NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
-                           ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, SCALAR_SOURCE_DIR, WRITE_SCALARS, READ_DEGREE_DAYS, WRITE_DEGREE_DAYS,
-                           ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE, RESTART_RUN);
+                           ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, SCALAR_SOURCE_DIR, WRITE_SCALARS, READ_HDD_CDD, WRITE_HDD_CDD,
+                           ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, ELM_EHC_HDD_CDD, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE, RESTART_RUN);
 
         /*
         // TODO: Verify that removal of the following is correct: BASE_CO2_SURFACE_FILE, BASE_CO2EMISS_SURFACE, BASE_CO2_AIRCRAFT_FILE, BASE_CO2EMISS_AIRCRAFT,

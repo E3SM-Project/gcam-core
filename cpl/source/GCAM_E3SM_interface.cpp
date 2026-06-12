@@ -411,7 +411,7 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
                                    const double *const aELMLandFrac, 
                                    int *aNumLon, int *aNumLat, int *aNumPFT, int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod,
                                    std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars,  std::string aScalarSourceDir,
-                                   bool aWriteScalars, bool aReadDegreeDays, bool aWriteDegreeDays, bool aScaleAgYield, bool aScaleCarbon,
+                                   bool aWriteScalars, bool aReadHDDCDD, bool aWriteHDDCDD, bool aScaleAgYield, bool aScaleCarbon, bool aScaleHDDCDD,
                                    std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName, bool aRestartRun )
 {
     int z, p, i, num_it, spinup;
@@ -527,7 +527,7 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
                 
 
                 setDegreeDaysGCAM(gcamYear, aELMArea, aELMHDD, aELMCDD, aPopDensity, aELMLandFrac, aNumLon, aNumLat, 
-                    aMappingFile, aReadDegreeDays, aWriteDegreeDays);
+                    aMappingFile, aReadHDDCDD, aWriteHDDCDD, aScaleHDDCDD);
             }
 
             // now run the current period
@@ -938,8 +938,8 @@ void GCAM_E3SM_interface::setLandProductivityScalingGCAM(int *yyyymmdd, double *
  * to separate heating and cooling degree days, to drive heating/cooling energy demand.
  * 
  * The method can either:
- * 1. Read degree days from pre-calculated files (if aReadDegreeDays = true)
- * 2. Calculate degree days from E3SM gridded data (if aReadDegreeDays = false)
+ * 1. Read degree days from pre-calculated files (if aReadHDDCDD = true)
+ * 2. Calculate degree days from E3SM gridded data (if aReadHDDCDD = false)
  * 
  * Similar to carbon scalers, this supports optional file I/O for diagnostics and restart.
  * 
@@ -952,13 +952,13 @@ void GCAM_E3SM_interface::setLandProductivityScalingGCAM(int *yyyymmdd, double *
  * \param aNumLon Integer pointer for the number of longitude grid points
  * \param aNumLat Integer pointer for the number of latitude grid points
  * \param aMappingFile Path to regional mapping file
- * \param aReadDegreeDays If true, read from files instead of calculating
- * \param aWriteDegreeDays If true, write calculated values to diagnostic files
+ * \param aReadHDDCDD If true, read from files instead of calculating
+ * \param aWriteHDDCDD If true, write calculated values to diagnostic files
  * 
  */
 void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD, 
     const double *const aELMCDD, const double *const aPopDensity, const double *const aELMLandFrac, const int *aNumLon, 
-    const int *aNumLat, const std::string &aMappingFile, const bool aReadDegreeDays, const bool aWriteDegreeDays)
+    const int *aNumLat, const std::string &aMappingFile, const bool aReadHDDCDD, const bool aWriteHDDCDD, bool aScaleHDDCDD)
 {
     ILogger& coupleLog = ILogger::getLogger("coupling_log");
     coupleLog.setLevel(ILogger::NOTICE);
@@ -969,6 +969,8 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
     std::vector<double> hddValues, cddValues;
     int numDegreeDayValues = 0;
     
+    coupleLog << "In setDegreeDaysGCAM, aScaleHDDCDD is: " << aScaleHDDCDD << endl;
+
     // Create DegreeDays object (false = aggregate to regions, not subregions).
     // Derefences the pointers before passing them in as arguments
     DegreeDays degreeDays(*aNumLon, *aNumLat, false);
@@ -978,9 +980,9 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
     coupleLog << "Finished reading regional mapping data for degree days" << std::endl;
     
     // Process heating/cooling degree days. TODO: Consider taking file name as an argument, rather than hard coding
-    if (aReadDegreeDays) 
+    if (aReadHDDCDD)
     {
-        std::string degreeDaysFile = "./degree_days_" + std::to_string(aGCAMYear) + ".csv";
+        std::string degreeDaysFile = "./hdd_cdd_" + std::to_string(aGCAMYear) + ".csv";
         coupleLog << "Reading degree days from file: " << degreeDaysFile << std::endl;
         numDegreeDayValues = degreeDays.readDegreeDays(degreeDaysFile, degreeDaysYears, degreeDaysRegions, hddValues, cddValues);
         coupleLog << "Read " << numDegreeDayValues << " degree day regional values" << std::endl;
@@ -994,82 +996,84 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
     }
 
     // Optional: write degree days to file for diagnostics/restart. TODO: Consider taking file name as an argument, rather than hard coding
-    if (aWriteDegreeDays && !aReadDegreeDays) 
+    if (aWriteHDDCDD && !aReadHDDCDD)
     {
-        std::string degreeDaysFile = "./degree_days_" + std::to_string(aGCAMYear) + ".csv";
+        std::string degreeDaysFile = "./hdd_cdd_" + std::to_string(aGCAMYear) + ".csv";
         degreeDays.writeDegreeDays(degreeDaysFile, degreeDaysYears, degreeDaysRegions, hddValues, cddValues, numDegreeDayValues);
         coupleLog << "Wrote degree days to file: " << degreeDaysFile << std::endl;
     }
 
-    // The SetDataHelper constructor expects 5 parameters, with the 3rd parameter being land techs (crop + basin names) in the case of carbon scalers.
-    // For degree days, we can use a vector with the same string (e.g., "comm heating", "comm cooling", "resid heating") for all records
-    std::vector<std::string> degreeDaysService(degreeDaysRegions.size(), "comm heating");
+    if( aScaleHDDCDD ) {
+        // The SetDataHelper constructor expects 5 parameters, with the 3rd parameter being land techs (crop + basin names) in the case of carbon scalers.
+        // For degree days, we can use a vector with the same string (e.g., "comm heating", "comm cooling", "resid heating") for all records
+        std::vector<std::string> degreeDaysService(degreeDaysRegions.size(), "comm heating");
 
-    coupleLog << "========== ABOUT TO CREATE SETDATAHELPER ==========" << std::endl;
-    coupleLog << "Creating setHDD object..." << std::endl;
+        coupleLog << "========== ABOUT TO CREATE SETDATAHELPER ==========" << std::endl;
+        coupleLog << "Creating setHDD object..." << std::endl;
 
-    try {
+        try {
 
-        coupleLog << "Validating vectors..." << std::endl;
-        for (size_t i = 0; i < hddValues.size(); ++i) {
-            if (!std::isfinite(hddValues[i])) {
-                coupleLog << "ERROR: hddValues[" << i << "] = " << hddValues[i] << " (not finite!)" << std::endl;
+            coupleLog << "Validating vectors..." << std::endl;
+            for (size_t i = 0; i < hddValues.size(); ++i) {
+                if (!std::isfinite(hddValues[i])) {
+                    coupleLog << "ERROR: hddValues[" << i << "] = " << hddValues[i] << " (not finite!)" << std::endl;
+                }
+                if (!std::isfinite(cddValues[i])) {
+                    coupleLog << "ERROR: cddValues[" << i << "] = " << cddValues[i] << " (not finite!)" << std::endl;
+                }
             }
-            if (!std::isfinite(cddValues[i])) {
-                coupleLog << "ERROR: cddValues[" << i << "] = " << cddValues[i] << " (not finite!)" << std::endl;
-            }
-        }
-        coupleLog << "All vectors validated!" << std::endl;
+            coupleLog << "All vectors validated!" << std::endl;
 
-        SetDataHelper setHDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, hddValues,  
-            "world/region[+name]//nodeInput[+name]/degree-days");
+            SetDataHelper setHDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, hddValues,
+                "world/region[+name]//nodeInput[+name]/degree-days");
         
-        coupleLog << "setHDD object created successfully!" << std::endl;
-        coupleLog << "Getting scenario pointer..." << std::endl;
+            coupleLog << "setHDD object created successfully!" << std::endl;
+            coupleLog << "Getting scenario pointer..." << std::endl;
         
-        Scenario* scenario = runner->getInternalScenario();
+            Scenario* scenario = runner->getInternalScenario();
         
-        coupleLog << "Scenario pointer: " << scenario << std::endl;
+            coupleLog << "Scenario pointer: " << scenario << std::endl;
         
-        if (!scenario) {
-            coupleLog << "ERROR: Scenario is NULL!" << std::endl;
-            return;
+            if (!scenario) {
+                coupleLog << "ERROR: Scenario is NULL!" << std::endl;
+                return;
+            }
+        
+            coupleLog << "About to call setHDD.run() for comm heating..." << std::endl;
+            coupleLog.flush();
+            setHDD.run(scenario);
+            coupleLog << "Comm heating HDD completed!" << std::endl;
+        
+            // CDD - Commercial
+            std::fill(degreeDaysService.begin(), degreeDaysService.end(), "comm cooling");
+            coupleLog << "Setting CDD in GCAM commercial buildings..." << std::endl;
+            SetDataHelper setCDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, cddValues,
+                "world/region[+name]//nodeInput[+name]/degree-days");
+            setCDD.run(scenario);
+            coupleLog << "Comm cooling CDD completed!" << std::endl;
+        
+            // HDD - Residential
+            std::fill(degreeDaysService.begin(), degreeDaysService.end(), "resid heating");
+            setHDD.setLandTechColumn(degreeDaysService);
+            coupleLog << "Setting HDD in GCAM residential buildings..." << std::endl;
+            setHDD.run(scenario);
+            coupleLog << "Resid heating HDD completed!" << std::endl;
+        
+            // CDD - Residential
+            std::fill(degreeDaysService.begin(), degreeDaysService.end(), "resid cooling");
+            setCDD.setLandTechColumn(degreeDaysService);
+            coupleLog << "Setting CDD in GCAM residential buildings..." << std::endl;
+            setCDD.run(scenario);
+            coupleLog << "Resid cooling CDD completed!" << std::endl;
+        
+        } catch (const std::exception& e) {
+            coupleLog << "EXCEPTION in setHDD: " << e.what() << std::endl;
+        } catch (...) {
+            coupleLog << "UNKNOWN EXCEPTION in setHDD!" << std::endl;
         }
-        
-        coupleLog << "About to call setHDD.run() for comm heating..." << std::endl;
-        coupleLog.flush();
-        setHDD.run(scenario);
-        coupleLog << "Comm heating HDD completed!" << std::endl;
-        
-        // CDD - Commercial
-        std::fill(degreeDaysService.begin(), degreeDaysService.end(), "comm cooling");
-        coupleLog << "Setting CDD in GCAM commercial buildings..." << std::endl;
-        SetDataHelper setCDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, cddValues,  
-            "world/region[+name]//nodeInput[+name]/degree-days");
-        setCDD.run(scenario);
-        coupleLog << "Comm cooling CDD completed!" << std::endl;
-        
-        // HDD - Residential
-        std::fill(degreeDaysService.begin(), degreeDaysService.end(), "resid heating");
-        setHDD.setLandTechColumn(degreeDaysService);
-        coupleLog << "Setting HDD in GCAM residential buildings..." << std::endl;
-        setHDD.run(scenario);
-        coupleLog << "Resid heating HDD completed!" << std::endl;
-        
-        // CDD - Residential  
-        std::fill(degreeDaysService.begin(), degreeDaysService.end(), "resid cooling");
-        setCDD.setLandTechColumn(degreeDaysService);
-        coupleLog << "Setting CDD in GCAM residential buildings..." << std::endl;
-        setCDD.run(scenario);
-        coupleLog << "Resid cooling CDD completed!" << std::endl;
-        
-    } catch (const std::exception& e) {
-        coupleLog << "EXCEPTION in setHDD: " << e.what() << std::endl;
-    } catch (...) {
-        coupleLog << "UNKNOWN EXCEPTION in setHDD!" << std::endl;
+
+        coupleLog << "========== SETDATAHELPER SECTION COMPLETED ==========" << std::endl;
     }
-
-    coupleLog << "========== SETDATAHELPER SECTION COMPLETED ==========" << std::endl;
 }
 
 void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,

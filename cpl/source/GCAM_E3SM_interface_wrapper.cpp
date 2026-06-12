@@ -44,8 +44,8 @@ extern "C" {
                  double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
                  double *aELMHDD, double *aELMCDD, double *aPopDensity, double *aELMLandFrac,
                  int *aNumLon, int *aNumLat, int *aNumPFT, int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod,
-                 char* aMappingFile, int *aFirstCoupledYear, int *aReadScalars, char* aScalarSourceDir, int *aWriteScalars, int *aReadDegreeDays, int *aWriteDegreeDays,
-                 int *aScaleAgYield, int *aScaleCarbon, char* aBaseNPPFile, char* aBaseHRFile, char* aBasePFTwtFile, int *aRestartRun) {
+                 char* aMappingFile, int *aFirstCoupledYear, int *aReadScalars, char* aScalarSourceDir, int *aWriteScalars, int *aReadHDDCDD, int *aWriteHDDCDD,
+                 int *aScaleAgYield, int *aScaleCarbon, int *aScaleHDDCDD, char* aBaseNPPFile, char* aBaseHRFile, char* aBasePFTwtFile, int *aRestartRun) {
   
       // convert to strings and bools where appropriate
       std::string BaseLucGcamFileName(aBaseLucGcamFileName);
@@ -58,18 +58,19 @@ extern "C" {
       std::string basePFTwtFile(aBasePFTwtFile);
       bool readScalars = *aReadScalars == 1 ? true : false;
       bool writeScalars = *aWriteScalars == 1 ? true : false;
-      const bool readDegreeDays = *aReadDegreeDays == 1 ? true : false;
-      const bool writeDegreeDays = *aWriteDegreeDays == 1 ? true : false;
+      const bool readHDDCDD = *aReadHDDCDD == 1 ? true : false;
+      const bool writeHDDCDD = *aWriteHDDCDD == 1 ? true : false;
       bool scaleAgYield = *aScaleAgYield == 1 ? true : false;
       bool scaleCarbon = *aScaleCarbon == 1 ? true : false;
+      bool scaleHDDCDD = *aScaleHDDCDD == 1 ? true : false;
       bool restartRun = *aRestartRun == 1 ? true : false;
   
       p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss, BaseLucGcamFileName, BaseCO2GcamFileName, Spinup,
                      aELMArea, aELMPFTFract, aELMNPP, aELMHR,
                      aELMHDD, aELMCDD, aPopDensity, aELMLandFrac, 
                      aNumLon, aNumLat, aNumPFT, aNumReg, aNumCty, aNumSector, aNumPeriod,
-                     MappingFile, aFirstCoupledYear, readScalars, ScalarSourceDir, writeScalars, readDegreeDays, writeDegreeDays,
-                     scaleAgYield, scaleCarbon, baseNPPFile, baseHRFile, basePFTwtFile, restartRun);
+                     MappingFile, aFirstCoupledYear, readScalars, ScalarSourceDir, writeScalars, readHDDCDD, writeHDDCDD,
+                     scaleAgYield, scaleCarbon, scaleHDDCDD, baseNPPFile, baseHRFile, basePFTwtFile, restartRun);
   }
 
   // Downscale Emissions
