@@ -34,7 +34,7 @@
  * \file degree_days.cpp
  * \brief This file aggregates gridded data on heating and cooling degree days from E3SM into region-specific averages for GCAM
  *
- * \author Philip Myint
+ * \author Philip Myint and Eva Sinha
  */
 
 #include "../include/degree_days.h"
@@ -53,6 +53,22 @@ DegreeDays::~DegreeDays()
 {
 }
 
+// Read baseline (historical) HDD/CDD data from CSV file
+// This is used to calculate the HDD/CDD scalars that
+// represent the ratio of current to historical degree days.
+// ASpatialData::readSpatialData method and then copying the vectors.
+void DegreeDays::readBaseDegreeDays(const std::string aBaseHDDFileName, const std::string aBaseCDDFileName){
+
+    // Read in average HDD
+    readSpatialDataCSV(aBaseHDDFileName, true, false, false);
+    mBaseHDDVector = getValueVector();
+
+    // Read in average CDD
+    readSpatialDataCSV(aBaseCDDFileName, true, false, false);
+    mBaseCDDVector = getValueVector();
+
+}
+
 /*!
  * \brief Aggregate gridded degree days to regional scale using population weighting
  * 
@@ -68,8 +84,8 @@ DegreeDays::~DegreeDays()
  * \param aELMLandFrac [INPUT] Land fraction for each grid cell (mNumLat × mNumLon elements, values between 0 and 1)
  * \param aYears [OUTPUT] Vector of years (one entry per region, all equal to aGCAMYear)
  * \param aRegions [OUTPUT] Vector of region names (e.g., "USA", "China", "India")
- * \param aHDDVector [OUTPUT] Vector of population-weighted heating degree days by region (degree-days)
- * \param aCDDVector [OUTPUT] Vector of population-weighted cooling degree days by region (degree-days)
+ * \param aHDDVector [OUTPUT] Vector of heating degree day scalars by region
+ * \param aCDDVector [OUTPUT] Vector of cooling degree day scalars by region
  * \param aNumValues [OUTPUT] Number of regional values written to output vectors
  * 
  * \details
@@ -86,6 +102,22 @@ DegreeDays::~DegreeDays()
  *   - Fractional weights from mRegionWeights handle cells straddling boundaries
  * \endcode
  * 
+ * **Scaling Methodology:**
+ *
+ * Scalar is computed here from the ratio of ELM's current year to ELM's historical baseline,
+ * and applied to GCAM's own (previously retrieved via GetDataHelper) degree-days
+ * value and push the result back into GCAM via SetDataHelper.
+ *
+ * \code
+ * Scalar Calculation (Every Coupled Year):
+ *   scalar_region = ELM_HDD_current_year / baseline_HDD_region
+ *   scalar stored in mHDDScalars[region] and mCDDScalars[region]
+ *   Bounds applied: [0.125, 2.0] (matching carbon scaler bounds)
+ * \endcode
+ *
+ * The baseline files (mBaseHDDVector, mBaseCDDVector) contain ELM's historical average
+ * on the same grid as current ELM output, read via readBaseDegreeDays().
+ *
  * **Handling Edge Cases:**
  * - Regions with zero population: DegreeDays = 0 
  * - Missing/NaN data: Skipped (not accumulated)
@@ -105,22 +137,27 @@ DegreeDays::~DegreeDays()
  * 
  */
 void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD, const double *const aELMCDD,
-    const double *const aPopDensity, const double *const aELMLandFrac, std::vector<int> &aYears, std::vector<std::string> &aRegions, 
-    std::vector<double> &aHDDVector, std::vector<double> &aCDDVector, int &aNumValues) 
+    const double *const aPopDensity, const double *const aELMLandFrac, std::vector<int> &aYears, std::vector<std::string> &aRegions,
+    std::vector<double> &aHDDVector, std::vector<double> &aCDDVector, int &aNumValues, std::string aBaseHDDFileName, std::string aBaseCDDFileName)
 {
     // TODO: Generate any diagnostic files or exclude outliers? Probably not necessary or relevant for degree days, but can add if desired
 
     // Create mappings to store intermediate information
     std::map<std::string, double> totalPopulation;
     std::map<std::string, double> totalHDD;
+    std::map<std::string, double> baseTotalHDD;
     std::map<std::string, double> totalCDD;
+    std::map<std::string, double> baseTotalCDD;
 
     // Note: E3SM data will have longitude moving fastest, then latitude, so loop so have longitude is the inner loop and latitude is the outer loop
     int gridIndex; 
 
-    // Weight that indicates an area- and fraction-weighted population of the grid cell for a particular region. 
+    // Weight that indicates an area- and fraction-weighted population of the grid cell for a particular region.
     // This is used to weight the degree days when aggregating to the regional level
-    double popWeight = 0.0; 
+    double popWeight = 0.0;
+
+    // First read baseline HDD and CDD from files
+    readBaseDegreeDays(aBaseHDDFileName, aBaseCDDFileName);
 
     for (int k = 1; k <= mNumLat; k++) 
     {
@@ -153,6 +190,8 @@ void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aE
                     totalPopulation[regID] += popWeight;
                     totalHDD[regID] += aELMHDD[gridIndex] * popWeight;
                     totalCDD[regID] += aELMCDD[gridIndex] * popWeight;
+                    baseTotalHDD[regID] += mBaseHDDVector[gridIndex] * popWeight;
+                    baseTotalCDD[regID] += mBaseCDDVector[gridIndex] * popWeight;
 
                 } // for (const auto &regID : regInGrd) 
 
@@ -165,7 +204,9 @@ void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aE
     // Create map to store information on degree days by region, which will be used to create the output vectors for GCAM
     std::map<std::string, double> aHDDMap;
     std::map<std::string, double> aCDDMap;
-   
+    std::map<std::string, double> baseHDDMap;
+    std::map<std::string, double> baseCDDMap;
+
     // Calculate the population-weighted average degree days for each region, and then add these entries to the degree days map accordingly
     for (const auto &pair : totalPopulation) 
     {
@@ -179,15 +220,55 @@ void DegreeDays::aggregateDegreeDays(const int aGCAMYear, const double *const aE
             // Calculate weighted average: total / population
             aHDDMap[regID] = std::abs(totalHDD[regID]) / populationInRegion;
             aCDDMap[regID] = totalCDD[regID] / populationInRegion;
+            baseHDDMap[regID] = std::abs(baseTotalHDD[regID]) / populationInRegion;
+            baseCDDMap[regID] = baseTotalCDD[regID] / populationInRegion;
         } 
         else 
         {
             // Set degree days to zero for this region if population is zero
             aHDDMap[regID] = 0.0;
             aCDDMap[regID] = 0.0;
+            baseHDDMap[regID] = 0.0;
+            baseCDDMap[regID] = 0.0;
         }
+        
+        // HDD scaling: recompute the scalar every coupled year as current ELM / baseline ELM
+        // This scalar gets applied to GCAM's own degree-days value
+        if (aHDDMap[regID] > 0.0 && baseHDDMap[regID] > 0.0) {
+            mHDDScalars[regID] = aHDDMap[regID] / baseHDDMap[regID];
+
+            // Apply bounds to scalar (matching carbon scaler bounds)
+            // TODO: Consider wider bounds (0.5-2.0 or 0.25-4.0) for climate extremes
+            if (mHDDScalars[regID] < 0.125) {
+                mHDDScalars[regID] = 0.125;
+            }
+            if (mHDDScalars[regID] > 2.0) {
+                mHDDScalars[regID] = 2.0;
+            }
+        } else {
+            mHDDScalars[regID] = 1.0;  // No scaling if data invalid
+        }
+
+        // CDD scaling: same logic as HDD
+        if (aCDDMap[regID] > 0.0 && baseCDDMap[regID] > 0.0) {
+            mCDDScalars[regID] = aCDDMap[regID] / baseCDDMap[regID];
+
+            // Apply bounds to scalar
+            if (mCDDScalars[regID] < 0.125) {
+                mCDDScalars[regID] = 0.125;
+            }
+            if (mCDDScalars[regID] > 2.0) {
+                mCDDScalars[regID] = 2.0;
+            }
+        } else {
+            mCDDScalars[regID] = 1.0;  // No scaling if data invalid
+        }
+
+        // Output the scalars themselves; these will be applied to GCAM's own degree-days value
+        aHDDMap[regID] = mHDDScalars[regID];
+        aCDDMap[regID] = mCDDScalars[regID];
     } // for (const auto &pair : totalPopulation)
-    
+
     // Create output vectors for GCAM. Loop through the maps and create the vectors as needed
     createDegreeDaysVectors(aGCAMYear, aYears, aRegions, aHDDVector, aHDDMap);
     createDegreeDaysVectors(aGCAMYear, aYears, aRegions, aCDDVector, aCDDMap);

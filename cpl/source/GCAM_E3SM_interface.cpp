@@ -1,7 +1,7 @@
 /*! 
  * \file GCAM_E3SM_interface.cpp
  * \brief E3SM gcam driver source file.
- * \author Kate Calvin and Alan Di Vittorio and Philip Myint
+ * \author Kate Calvin, Alan Di Vittorio, Philip Myint, and Eva Sinha
  */
 
 
@@ -110,7 +110,7 @@ GCAM_E3SM_interface::~GCAM_E3SM_interface(){
  */
 
 void GCAM_E3SM_interface::initGCAM(int *yyyymmdd, std::string aCaseName, std::string aGCAMConfig, std::string aGCAM2ELMCO2Map, std::string aGCAM2ELMLUCMap,
-                                   std::string aGCAM2ELMWHMap, std::string aGCAM2ELMCDENMap,
+                                   std::string aGCAM2ELMWHMap, std::string aGCAM2ELMCDENMap, std::string aGCAM2ELMDDMap,
                                    std::string aBaseCO2GcamFileName, std::string aBaseCO2SfcFile, std::string aBaseCO2ShipFile, std::string aBaseCO2AirFile, 
                                    double* aELMArea, int *aNumLon, int *aNumLat, int *aNumReg, int *aNumSector, bool aRestartRun)
 {
@@ -372,6 +372,23 @@ void GCAM_E3SM_interface::initGCAM(int *yyyymmdd, std::string aCaseName, std::st
     mBGCDensityData.printAsTable(oFile);
     oFile.close();
 
+    // Set up the degree days mapping
+    success = parseXMLInternal(aGCAM2ELMDDMap, &mBaseDegreeDaysData);
+    mBaseDegreeDaysData.addYearColumn("Year", years, yearRemap);
+    mBaseDegreeDaysData.finalizeColumns();
+
+    // get GCAM's own base degree days (comm/resid heating/cooling all share the same "degree-days" field)
+    coupleLog << "initGCAM: Getting base degree days" << endl;
+    double *baseDD = mBaseDegreeDaysData.getData();
+    fill(baseDD, baseDD+mBaseDegreeDaysData.getArrayLength(), 0.0);
+    GetDataHelper getDD("world/region[+NamedFilter,MatchesAny]//nodeInput[+NamedFilter,MatchesAny]/degree-days", mBaseDegreeDaysData);
+    getDD.run(runner->getInternalScenario());
+    // write a diagnostic table
+    std::string dd_oname = "degree_days_data_base.csv";
+    oFile.open(dd_oname);
+    mBaseDegreeDaysData.printAsTable(oFile);
+    oFile.close();
+
     // Clean up
     XMLParseHelper::cleanupParser();
     
@@ -412,7 +429,8 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
                                    int *aNumLon, int *aNumLat, int *aNumPFT, int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod,
                                    std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars,  std::string aScalarSourceDir,
                                    bool aWriteScalars, bool aReadHDDCDD, bool aWriteHDDCDD, bool aScaleAgYield, bool aScaleCarbon, bool aScaleHDDCDD,
-                                   std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName, bool aRestartRun )
+                                   std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName,
+                                   std::string aBaseHDDFileName, std::string aBaseCDDFileName, bool aRestartRun )
 {
     int z, p, i, num_it, spinup;
     int row, lurow, r, l;
@@ -526,8 +544,8 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
                             aWriteScalars, aScaleAgYield, aScaleCarbon, aBaseNPPFileName, aBaseHRFileName, aBasePFTWtFileName);
                 
 
-                setDegreeDaysGCAM(gcamYear, aELMArea, aELMHDD, aELMCDD, aPopDensity, aELMLandFrac, aNumLon, aNumLat, 
-                    aMappingFile, aReadHDDCDD, aWriteHDDCDD, aScaleHDDCDD);
+                setDegreeDaysGCAM(gcamYear, aELMArea, aELMHDD, aELMCDD, aPopDensity, aELMLandFrac, aNumLon, aNumLat,
+                    aMappingFile, aReadHDDCDD, aScalarSourceDir, aWriteHDDCDD, aScaleHDDCDD, aBaseHDDFileName, aBaseCDDFileName);
             }
 
             // now run the current period
@@ -920,7 +938,7 @@ void GCAM_E3SM_interface::setLandProductivityScalingGCAM(int *yyyymmdd, double *
            cd.precision(20);
 
            for (int i = 0; i < cdCount; i++){
-               cd << cdensityRegion[i] << "," << cdensityLandTech[i] << ", AGCD" << AGCD_scaled[i] << ", BGCD" << BGCD_scaled[i] << endl;
+               cd << cdensityRegion[i] << "," << cdensityLandTech[i] << ", AGCD " << AGCD_scaled[i] << ", BGCD " << BGCD_scaled[i] << endl;
            } // end i loop for carbon diagnostic file
 
         } // end if scale carbon
@@ -954,11 +972,15 @@ void GCAM_E3SM_interface::setLandProductivityScalingGCAM(int *yyyymmdd, double *
  * \param aMappingFile Path to regional mapping file
  * \param aReadHDDCDD If true, read from files instead of calculating
  * \param aWriteHDDCDD If true, write calculated values to diagnostic files
+ * \param aScaleHDDCDD If true, apply scaling based on baseline comparison
+ * \param aBaseHDDFileName Path to baseline degree days CSV file (required if aScaleHDDCDD is true)
+ * \param aBaseCDDFileName Path to baseline degree days CSV file (required if aScaleHDDCDD is true)
  * 
  */
-void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD, 
+void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD,
     const double *const aELMCDD, const double *const aPopDensity, const double *const aELMLandFrac, const int *aNumLon, 
-    const int *aNumLat, const std::string &aMappingFile, const bool aReadHDDCDD, const bool aWriteHDDCDD, bool aScaleHDDCDD)
+    const int *aNumLat, const std::string &aMappingFile, const bool aReadHDDCDD, std::string aScalarSourceDir, const bool aWriteHDDCDD, bool aScaleHDDCDD,
+    const std::string &aBaseHDDFileName, const std::string &aBaseCDDFileName)
 {
     ILogger& coupleLog = ILogger::getLogger("coupling_log");
     coupleLog.setLevel(ILogger::NOTICE);
@@ -982,7 +1004,7 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
     // Process heating/cooling degree days. TODO: Consider taking file name as an argument, rather than hard coding
     if (aReadHDDCDD)
     {
-        std::string degreeDaysFile = "./hdd_cdd_" + std::to_string(aGCAMYear) + ".csv";
+        std::string degreeDaysFile = aScalarSourceDir + "./hdd_cdd_" + std::to_string(aGCAMYear) + ".csv";
         coupleLog << "Reading degree days from file: " << degreeDaysFile << std::endl;
         numDegreeDayValues = degreeDays.readDegreeDays(degreeDaysFile, degreeDaysYears, degreeDaysRegions, hddValues, cddValues);
         coupleLog << "Read " << numDegreeDayValues << " degree day regional values" << std::endl;
@@ -990,9 +1012,12 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
     else 
     {
         coupleLog << "Calculating degree days from E3SM gridded data" << std::endl;
+        coupleLog << "Calculating degree day scalars based on baseline comparison" << std::endl;
         degreeDays.aggregateDegreeDays(aGCAMYear, aELMArea, aELMHDD, aELMCDD, aPopDensity, aELMLandFrac,
-                                       degreeDaysYears, degreeDaysRegions, hddValues, cddValues, numDegreeDayValues);
-        coupleLog << "Calculated " << numDegreeDayValues << " degree day regional values" << std::endl;
+                                       degreeDaysYears, degreeDaysRegions, hddValues, cddValues, numDegreeDayValues,
+                                       aBaseHDDFileName, aBaseCDDFileName);
+        coupleLog << "Scalar calculation completed successfully" << std::endl;
+        coupleLog << "Calculated " << numDegreeDayValues << " degree day regional scalars" << std::endl;
     }
 
     // Optional: write degree days to file for diagnostics/restart. TODO: Consider taking file name as an argument, rather than hard coding
@@ -1024,7 +1049,29 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
             }
             coupleLog << "All vectors validated!" << std::endl;
 
-            SetDataHelper setHDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, hddValues,
+            // hddValues/cddValues are scalars (ELM current year / baseline, per region).
+            // Apply them to GCAM's own base degree-days values (captured once at init into mBaseDegreeDaysData)
+            double* baseDD = mBaseDegreeDaysData.getData();
+            size_t numServices = mBaseDegreeDaysData.getColumn("service")->mInOrderOutputNames.size();
+            size_t commHeatIdx = mBaseDegreeDaysData.getIndexInColumn("service", "comm heating");
+            size_t commCoolIdx = mBaseDegreeDaysData.getIndexInColumn("service", "comm cooling");
+            size_t residHeatIdx = mBaseDegreeDaysData.getIndexInColumn("service", "resid heating");
+            size_t residCoolIdx = mBaseDegreeDaysData.getIndexInColumn("service", "resid cooling");
+
+            std::vector<double> commHeatingValues(degreeDaysRegions.size());
+            std::vector<double> commCoolingValues(degreeDaysRegions.size());
+            std::vector<double> residHeatingValues(degreeDaysRegions.size());
+            std::vector<double> residCoolingValues(degreeDaysRegions.size());
+
+            for (size_t i = 0; i < degreeDaysRegions.size(); ++i) {
+                size_t rowBase = mBaseDegreeDaysData.getIndexInColumn("region", degreeDaysRegions[i]) * numServices;
+                commHeatingValues[i]  = baseDD[rowBase + commHeatIdx]  * hddValues[i];
+                residHeatingValues[i] = baseDD[rowBase + residHeatIdx] * hddValues[i];
+                commCoolingValues[i]  = baseDD[rowBase + commCoolIdx]  * cddValues[i];
+                residCoolingValues[i] = baseDD[rowBase + residCoolIdx] * cddValues[i];
+            }
+ 
+            SetDataHelper setHDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, commHeatingValues,
                 "world/region[+name]//nodeInput[+name]/degree-days");
         
             coupleLog << "setHDD object created successfully!" << std::endl;
@@ -1047,23 +1094,25 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
             // CDD - Commercial
             std::fill(degreeDaysService.begin(), degreeDaysService.end(), "comm cooling");
             coupleLog << "Setting CDD in GCAM commercial buildings..." << std::endl;
-            SetDataHelper setCDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, cddValues,
+            SetDataHelper setCDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, commCoolingValues,
                 "world/region[+name]//nodeInput[+name]/degree-days");
             setCDD.run(scenario);
             coupleLog << "Comm cooling CDD completed!" << std::endl;
         
             // HDD - Residential
             std::fill(degreeDaysService.begin(), degreeDaysService.end(), "resid heating");
-            setHDD.setLandTechColumn(degreeDaysService);
+            SetDataHelper setResidHDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, residHeatingValues,
+                "world/region[+name]//nodeInput[+name]/degree-days");
             coupleLog << "Setting HDD in GCAM residential buildings..." << std::endl;
-            setHDD.run(scenario);
+            setResidHDD.run(scenario);
             coupleLog << "Resid heating HDD completed!" << std::endl;
         
             // CDD - Residential
             std::fill(degreeDaysService.begin(), degreeDaysService.end(), "resid cooling");
-            setCDD.setLandTechColumn(degreeDaysService);
+            SetDataHelper setResidCDD(degreeDaysYears, degreeDaysRegions, degreeDaysService, residCoolingValues,
+                "world/region[+name]//nodeInput[+name]/degree-days");
             coupleLog << "Setting CDD in GCAM residential buildings..." << std::endl;
-            setCDD.run(scenario);
+            setResidCDD.run(scenario);
             coupleLog << "Resid cooling CDD completed!" << std::endl;
         
         } catch (const std::exception& e) {

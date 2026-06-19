@@ -1,5 +1,5 @@
 /*
-* \author Kate Calvin and Alan Di Vittorio and Philip Myint
+* \author Kate Calvin, Alan Di Vittorio, Philip Myint, and Eva Sinha
 */
 
 #include "util/base/include/definitions.h"
@@ -26,7 +26,7 @@ public:
     GCAM_E3SM_interface(int *aNumLon, int *aNumLat, int *aNumReg, int *aNumSector);
     ~GCAM_E3SM_interface();
     void initGCAM(int *yyyymmdd, std::string aCaseName, std::string aGCAMConfig, std::string aGCAM2ELMCO2Map, std::string aGCAM2ELMLUCMap,
-                  std::string aGCAM2ELMWHMap, std::string aGCAM2ELMCDENMap,
+                  std::string aGCAM2ELMWHMap, std::string aGCAM2ELMCDENMap, std::string aGCAM2ELMDDMap,
                   std::string aBaseCO2GcamFileName, std::string aBaseCO2SfcFile, std::string aBaseCO2ShipFile, std::string aBaseCO2AirFile,
                   double *aELMArea, int *aNumLon, int *aNumLat, int *aNumReg, int *aNumSector, bool aRestartRun);
 
@@ -37,7 +37,8 @@ public:
                   std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars,  std::string aScalarSourceDir, bool aWriteScalars, 
                   const bool aReadHDDCDD, const bool aWriteHDDCDD,
                  bool aScaleAgYield, bool aScaleCarbon, bool aScaleHDDCDD,
-                 std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName, bool aRestartRun);
+                 std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName,
+                 std::string aBaseHDDFileName, std::string aBaseCDDFileName, bool aRestartRun);
 
     void setLandProductivityScalingGCAM(int *yyyymmdd, double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
                         int *aNumLon, int *aNumLat, int *aNumPFT, std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars, std::string aScalarSourceDir,
@@ -45,7 +46,8 @@ public:
 
     void setDegreeDaysGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD, const double *const aELMCDD,
                            const double *const aPopDensity, const double *const aELMLandFrac, const int *aNumLon, const int *aNumLat,
-                           const std::string &aMappingFile, const bool aReadHDDCDD, const bool aWriteHDDCDD, bool aScaleHDDCDD);
+                           const std::string &aMappingFile, const bool aReadHDDCDD, std::string aScalarSourceDir, const bool aWriteHDDCDD, bool aScaleHDDCDD,
+                           const std::string &aBaseHDDFileName, const std::string &aBaseCDDFileName);
 
     void downscaleEmissionsGCAM(double *gcamoemiss,
                                 double *gcamoco2sfcjan, double *gcamoco2sfcfeb, double *gcamoco2sfcmar, double *gcamoco2sfcapr,
@@ -84,6 +86,7 @@ public:
     ReMapData mWoodHarvestData;
     ReMapData mAGCDensityData;
     ReMapData mBGCDensityData;   
+    ReMapData mBaseDegreeDaysData;
 
     std::vector<double> mBaseYearEmissions_sfc;
     std::vector<double> mBaseYearEmissions_air;

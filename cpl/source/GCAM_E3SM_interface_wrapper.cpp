@@ -17,7 +17,7 @@ extern "C" {
   }
     
   // Call the GCAM initialization
-  void initcgcam_(int *yyyymmdd, char* aCaseName, char* aGCAMConfig, char* aGCAM2ELMCO2Map, char* aGCAM2ELMLUCMap, char* aGCAM2ELMWHMap, char* aGCAM2ELMCDENMap,
+  void initcgcam_(int *yyyymmdd, char* aCaseName, char* aGCAMConfig, char* aGCAM2ELMCO2Map, char* aGCAM2ELMLUCMap, char* aGCAM2ELMWHMap, char* aGCAM2ELMCDENMap, char* aGCAM2ELMDDMap,
 		  char *aBaseCO2GcamFileName, char *aBaseCO2SfcFile, char *aBaseCO2ShipFile, char *aBaseCO2AirFile,
                   double *aELMArea, int *aNumLon, int *aNumLat, int *aNumReg, int *aNumSector, int *aRestartRun) {
 
@@ -28,13 +28,14 @@ extern "C" {
       std::string GCAM2ELMLUCMap(aGCAM2ELMLUCMap);
       std::string GCAM2ELMWHMap(aGCAM2ELMWHMap);
       std::string GCAM2ELMCDENMap(aGCAM2ELMCDENMap);
+      std::string GCAM2ELMDDMap(aGCAM2ELMDDMap);
       std::string BaseCO2GcamFileName(aBaseCO2GcamFileName);
       std::string BaseCO2SfcFile(aBaseCO2SfcFile);
       std::string BaseCO2ShipFile(aBaseCO2ShipFile);
       std::string BaseCO2AirFile(aBaseCO2AirFile);
       bool restartRun = *aRestartRun == 1 ? true : false;
       
-    p_obj->initGCAM(yyyymmdd, CaseName, GCAMConfig, GCAM2ELMCO2Map, GCAM2ELMLUCMap, GCAM2ELMWHMap, GCAM2ELMCDENMap,
+    p_obj->initGCAM(yyyymmdd, CaseName, GCAMConfig, GCAM2ELMCO2Map, GCAM2ELMLUCMap, GCAM2ELMWHMap, GCAM2ELMCDENMap, GCAM2ELMDDMap,
                     BaseCO2GcamFileName, BaseCO2SfcFile, BaseCO2ShipFile, BaseCO2AirFile,
                     aELMArea, aNumLon, aNumLat, aNumReg, aNumSector, restartRun);
   }
@@ -45,7 +46,8 @@ extern "C" {
                  double *aELMHDD, double *aELMCDD, double *aPopDensity, double *aELMLandFrac,
                  int *aNumLon, int *aNumLat, int *aNumPFT, int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod,
                  char* aMappingFile, int *aFirstCoupledYear, int *aReadScalars, char* aScalarSourceDir, int *aWriteScalars, int *aReadHDDCDD, int *aWriteHDDCDD,
-                 int *aScaleAgYield, int *aScaleCarbon, int *aScaleHDDCDD, char* aBaseNPPFile, char* aBaseHRFile, char* aBasePFTwtFile, int *aRestartRun) {
+                 int *aScaleAgYield, int *aScaleCarbon, int *aScaleHDDCDD, char* aBaseNPPFile, char* aBaseHRFile, char* aBasePFTwtFile, 
+                 char* aBaseHDDFile, char* aBaseCDDFile, int *aRestartRun) {
   
       // convert to strings and bools where appropriate
       std::string BaseLucGcamFileName(aBaseLucGcamFileName);
@@ -56,6 +58,8 @@ extern "C" {
       std::string baseNPPFile(aBaseNPPFile);
       std::string baseHRFile(aBaseHRFile);
       std::string basePFTwtFile(aBasePFTwtFile);
+      std::string baseHDDFile(aBaseHDDFile);
+      std::string baseCDDFile(aBaseCDDFile);
       bool readScalars = *aReadScalars == 1 ? true : false;
       bool writeScalars = *aWriteScalars == 1 ? true : false;
       const bool readHDDCDD = *aReadHDDCDD == 1 ? true : false;
@@ -70,7 +74,8 @@ extern "C" {
                      aELMHDD, aELMCDD, aPopDensity, aELMLandFrac, 
                      aNumLon, aNumLat, aNumPFT, aNumReg, aNumCty, aNumSector, aNumPeriod,
                      MappingFile, aFirstCoupledYear, readScalars, ScalarSourceDir, writeScalars, readHDDCDD, writeHDDCDD,
-                     scaleAgYield, scaleCarbon, scaleHDDCDD, baseNPPFile, baseHRFile, basePFTwtFile, restartRun);
+                     scaleAgYield, scaleCarbon, scaleHDDCDD, baseNPPFile, baseHRFile, basePFTwtFile, 
+                     baseHDDFile, baseCDDFile, restartRun);
   }
 
   // Downscale Emissions

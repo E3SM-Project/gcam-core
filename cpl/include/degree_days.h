@@ -53,8 +53,8 @@ class DegreeDays : public ASpatialData
         ~DegreeDays();
 
         void aggregateDegreeDays(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD, const double *const aELMCDD,
-            const double *const aPopDensity, const double *const aELMLandFrac, std::vector<int> &aYears, std::vector<std::string> &aRegions, 
-            std::vector<double> &aELMHDDVector, std::vector<double> &aELMCDDVector, int &aNumValues);
+            const double *const aPopDensity, const double *const aELMLandFrac, std::vector<int> &aYears, std::vector<std::string> &aRegions,
+            std::vector<double> &aELMHDDVector, std::vector<double> &aELMCDDVector, int &aNumValues, std::string aBaseHDDFileName, std::string aBaseCDDFileName);
 
         void createDegreeDaysVectors(const int aGCAMYear, std::vector<int> &aYears, std::vector<std::string> &aRegions,
                             std::vector<double> &aDegreeDaysVector, const std::map<std::string, double> &aDegreeDaysMap);
@@ -64,10 +64,24 @@ class DegreeDays : public ASpatialData
 
         int readDegreeDays(const std::string &aFileName, std::vector<int> &aYears, std::vector<std::string> &aRegions,
                 std::vector<double> &aHDDVector, std::vector<double> &aCDDVector);
+
+        void readBaseDegreeDays(const std::string aBaseHDDFileName, const std::string aBaseCDDFileName);
+
+
     private:    
         // Number of latitude and longitude values. Storing these so they do not have to be passed to every method
         int mNumLat;
         int mNumLon;
+
+        // Baseline degree days for scaling (gridded data at lat/lon level)
+        std::vector<double> mBaseHDDVector;
+        std::vector<double> mBaseCDDVector;
+
+        // Scalars recalculated every coupled year from the current ELM aggregation and the baseline.
+        // Maps region ID to scalar value (scalar = ELM_current_year / baseline), bounded to [0.125, 2.0].
+        // These are applied to GCAM's degree-days values.
+        std::map<std::string, double> mHDDScalars;
+        std::map<std::string, double> mCDDScalars;
 };
 
 #endif // __DEGREE_DAYS__
