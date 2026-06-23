@@ -67,7 +67,7 @@ int main( ) {
     // this file needs to be copied to ../cpl/data because it is not a namelist item
     // it is located in: .../inputdata/iac/giac/gcam/gcam_6_0/data, prefix is machine dependent
     // the other ../cpl/data files below also have to be copied until this namelist read is fixed
-    std::string BASE_CELL_AREA_FILE = "../cpl/data/base_f09_cell_area.csv"
+    std::string BASE_CELL_AREA_FILE = "../cpl/data/base_f09_cell_area.csv";
 
     // These are the EHC namelist variables for GCAM
     //   this is the full namelist, even though not all are needed here
@@ -121,6 +121,7 @@ int main( ) {
     bool WRITE_SCALARS = true; // if true will write to a file
     bool GCAM_SPINUP = false;   // if true a gcam spinup will run; otherwise restarts from restart files
     bool RUN_GCAM = true;
+    bool USE_GCAM_USA = false;
 
     // Define coupling control variables
     // These booleans define what is passed between GCAM & E3SM.
@@ -322,7 +323,7 @@ if (false) {
     double *gcaminpp = new double [(*NUM_LAT) * (*NUM_LON) * (*NUM_PFT)]();
     double *gcamihr = new double [(*NUM_LAT) * (*NUM_LON) * (*NUM_PFT)]();
     double *gcamoluc = new double [(*NUM_GCAM_LAND_REGIONS) * (*NUM_EHC2ELM_LANDTYPES)]();
-    double *gcamoemiss = new double [(*NUM_EMISS_SECTORS) * (*NUM_EMISS_REGIONS)](); // Emissions by sector and region (not gridded)
+    double *gcamoemiss = new double [(*NUM_EMISS_SECTORS) * (*NUM_GCAM_ENERGY_REGIONS)](); // Emissions by sector and region (not gridded)
     double *gcamoco2sfcjan = new double [(*NUM_LAT) * (*NUM_LON)](); // Emissions data is monthly
     double *gcamoco2sfcfeb = new double [(*NUM_LAT) * (*NUM_LON)](); // Emissions data is monthly
     double *gcamoco2sfcmar = new double [(*NUM_LAT) * (*NUM_LON)](); // Emissions data is monthly
@@ -408,9 +409,8 @@ if (false) {
                                       gcamoco2airhisep, gcamoco2airhioct, gcamoco2airhinov, gcamoco2airhidec,
                                       ELM2GCAM_MAPPING_FILE, COUNTRY2GRID_MAP, COUNTRY2REGION_MAP,
                                       POP_IIASA_FILE, GDP_IIASA_FILE, POP_GCAM_FILE, GDP_GCAM_FILE, CO2_GCAM_FILE,
-                                      BASE_CO2_SURFACE_FILE, BASE_CO2_AIRCRAFT_FILE,
                                       NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
-                                      NUM_LON, NUM_LAT, WRITE_CO2, YYYYMMDD, SURFACE_CO2_DOWNSCALING_METHOD);
+                                      NUM_LON, NUM_LAT, WRITE_CO2, YYYYMMDD, SURFACE_CO2_DOWNSCALING_METHOD, USE_GCAM_USA);
         }
             
         }
@@ -462,9 +462,8 @@ if (false) {
                                       gcamoco2airhisep, gcamoco2airhioct, gcamoco2airhinov, gcamoco2airhidec,
                                       ELM2GCAM_MAPPING_FILE, COUNTRY2GRID_MAP, COUNTRY2REGION_MAP,
                                       POP_IIASA_FILE, GDP_IIASA_FILE, POP_GCAM_FILE, GDP_GCAM_FILE, CO2_GCAM_FILE,
-                                      BASE_CO2_SURFACE_FILE, BASE_CO2_AIRCRAFT_FILE,
                                       NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
-                                      NUM_LON, NUM_LAT, WRITE_CO2, YYYYMMDD, SURFACE_CO2_DOWNSCALING_METHOD);
+                                      NUM_LON, NUM_LAT, WRITE_CO2, YYYYMMDD, SURFACE_CO2_DOWNSCALING_METHOD, USE_GCAM_USA);
 
         }
         
