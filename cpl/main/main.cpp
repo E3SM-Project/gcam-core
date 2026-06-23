@@ -127,6 +127,7 @@ int main( ) {
     bool READ_HDD_CDD = false;
     bool WRITE_HDD_CDD = true;
     bool RUN_GCAM = true;
+    bool USE_GCAM_USA = false;
 
     // Define coupling control variables
     // These booleans define what is passed between GCAM & E3SM.
@@ -347,7 +348,7 @@ if (false) {
     double *gcampopdensity = new double [(*NUM_LAT) * (*NUM_LON)]();
     double *gcamlandfrac = new double [(*NUM_LAT) * (*NUM_LON)]();
     double *gcamoluc = new double [(*NUM_GCAM_LAND_REGIONS) * (*NUM_EHC2ELM_LANDTYPES)];
-    double *gcamoemiss = new double [(*NUM_EMISS_SECTORS) * (*NUM_EMISS_REGIONS)](); // Emissions by sector and region (not gridded)
+    double *gcamoemiss = new double [(*NUM_EMISS_SECTORS) * (*NUM_GCAM_ENERGY_REGIONS)](); // Emissions by sector and region (not gridded)
     double *gcamoco2sfcjan = new double [(*NUM_LAT) * (*NUM_LON)](); // Emissions data is monthly
     double *gcamoco2sfcfeb = new double [(*NUM_LAT) * (*NUM_LON)](); // Emissions data is monthly
     double *gcamoco2sfcmar = new double [(*NUM_LAT) * (*NUM_LON)](); // Emissions data is monthly
@@ -449,9 +450,8 @@ if (false) {
                                       gcamoco2airhisep, gcamoco2airhioct, gcamoco2airhinov, gcamoco2airhidec,
                                       ELM2GCAM_MAPPING_FILE, COUNTRY2GRID_MAP, COUNTRY2REGION_MAP,
                                       POP_IIASA_FILE, GDP_IIASA_FILE, POP_GCAM_FILE, GDP_GCAM_FILE, CO2_GCAM_FILE,
-                                      BASE_CO2_SURFACE_FILE, BASE_CO2_AIRCRAFT_FILE,
                                       NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
-                                      NUM_LON, NUM_LAT, WRITE_CO2, YYYYMMDD, SURFACE_CO2_DOWNSCALING_METHOD);
+                                      NUM_LON, NUM_LAT, WRITE_CO2, YYYYMMDD, SURFACE_CO2_DOWNSCALING_METHOD, USE_GCAM_USA);
         }
             
         }
@@ -517,9 +517,8 @@ if (false) {
                                       gcamoco2airhisep, gcamoco2airhioct, gcamoco2airhinov, gcamoco2airhidec,
                                       ELM2GCAM_MAPPING_FILE, COUNTRY2GRID_MAP, COUNTRY2REGION_MAP,
                                       POP_IIASA_FILE, GDP_IIASA_FILE, POP_GCAM_FILE, GDP_GCAM_FILE, CO2_GCAM_FILE,
-                                      BASE_CO2_SURFACE_FILE, BASE_CO2_AIRCRAFT_FILE,
                                       NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
-                                      NUM_LON, NUM_LAT, WRITE_CO2, YYYYMMDD, SURFACE_CO2_DOWNSCALING_METHOD);
+                                      NUM_LON, NUM_LAT, WRITE_CO2, YYYYMMDD, SURFACE_CO2_DOWNSCALING_METHOD, USE_GCAM_USA);
 
         }
                                       */

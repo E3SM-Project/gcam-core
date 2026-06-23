@@ -18,4 +18,4 @@ cpl_dir:   ${OBJS}
 
 
 clean:
-	rm *.o *.mod
+	rm *.o *.mod *.d
