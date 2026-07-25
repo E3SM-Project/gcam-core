@@ -1006,13 +1006,13 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
     if (aReadHDDCDD)
     {
         std::string degreeDaysFile = aScalarSourceDir + "./hdd_cdd_scalars_" + std::to_string(aGCAMYear) + ".csv";
-        coupleLog << "Reading degree days from file: " << degreeDaysFile << std::endl;
+        coupleLog << "Reading degree day scalars from file: " << degreeDaysFile << std::endl;
         numDegreeDayValues = degreeDays.readDegreeDays(degreeDaysFile, degreeDaysYears, degreeDaysRegions, hddValues, cddValues);
         coupleLog << "Read " << numDegreeDayValues << " degree day regional values" << std::endl;
     } 
     else 
     {
-        coupleLog << "Calculating degree days from E3SM gridded data" << std::endl;
+        coupleLog << "Calculating degree day scalars from E3SM gridded data" << std::endl;
         coupleLog << "Calculating degree day scalars based on baseline comparison" << std::endl;
         degreeDays.aggregateDegreeDays(aGCAMYear, aELMArea, aELMHDD, aELMCDD, aPopDensity, aELMLandFrac,
                                        degreeDaysYears, degreeDaysRegions, hddValues, cddValues, numDegreeDayValues,
@@ -1026,7 +1026,7 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
     {
         std::string degreeDaysFile = "./hdd_cdd_scalars_" + std::to_string(aGCAMYear) + ".csv";
         degreeDays.writeDegreeDays(degreeDaysFile, degreeDaysYears, degreeDaysRegions, hddValues, cddValues, numDegreeDayValues);
-        coupleLog << "Wrote degree days to file: " << degreeDaysFile << std::endl;
+        coupleLog << "Wrote degree day scalars to file: " << degreeDaysFile << std::endl;
     }
 
     if( aScaleHDDCDD ) {
