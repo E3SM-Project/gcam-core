@@ -301,7 +301,7 @@ void GCAM_E3SM_interface::initGCAM(int *yyyymmdd, std::string aCaseName, std::st
 
    // check the member variables
    coupleLog << "initGCAM: global surface data in Tg C: grid 2014 = " << mBaseYearGridGlobalSfcCO2Emiss <<  endl;
-   coupleLog << "initGCAM: global shipping data in Tg C: grid 2024 = " << mBaseYearGridGlobalShipCO2Emiss << endl;
+   coupleLog << "initGCAM: global shipping data in Tg C: grid 2014 = " << mBaseYearGridGlobalShipCO2Emiss << endl;
    coupleLog << "initGCAM: global aircraft data in Tg C: grid 2014 = " << mBaseYearGridGlobalAirCO2Emiss << endl;
 
     // scale the grids to 2015 gcam data
