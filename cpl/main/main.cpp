@@ -36,7 +36,7 @@
 * \brief This file runs GCAM as if it were coupled to E3SM. This is used for testing.
 *  this is based on the one-degree EHC setup
 *
-* \author Kate Calvin and Alan Di Vittorio
+* \author Kate Calvin and Alan Di Vittorio and Philip Myint
 */
 
 // include standard libraries
@@ -64,10 +64,10 @@ int main( ) {
     int yyyymmdd = 20150101;
     int* YYYYMMDD = &yyyymmdd;
    
-    // this file needs to be copied to ../cpl/data because it is not a namelist item
+    // this file needs to be copied to ../data because it is not a namelist item
     // it is located in: .../inputdata/iac/giac/gcam/gcam_6_0/data, prefix is machine dependent
-    // the other ../cpl/data files below also have to be copied until this namelist read is fixed
-    std::string BASE_CELL_AREA_FILE = "../cpl/data/base_f09_cell_area.csv"
+    // the other ../data files below also have to be copied until this namelist read is fixed
+    std::string BASE_CELL_AREA_FILE = "../data/base_f09_cell_area.csv";
 
     // These are the EHC namelist variables for GCAM
     //   this is the full namelist, even though not all are needed here
@@ -76,9 +76,9 @@ int main( ) {
     // In fully coupled mode, these are defined in an E3SM namelist.
     // the file .../gcam/exe/user_nl_gcam contains the full inputdata paths to the required files
     //   the prefix path to inputdata needs to be changed for each machine
-    // the ../cpl/data files need to be manually copied into .../gcam/cpl/data before running this program, until the read below is fixed
+    // the ../data files need to be manually copied into .../gcam/cpl/data before running this program, until the read below is fixed
     //   this is because we had to remove these files from this repo
-    // the ../cpl/mapping files remain in this repo
+    // the ../mapping files remain in this repo
     // note that the executable is assumed to exist and be running in the .../gcam/exe folder
     std::string CASE_NAME = "gcam_test";
     std::string GCAM_CONFIG = "configuration_ssp245_in_E3SM.xml";
@@ -91,6 +91,7 @@ int main( ) {
     std::string GCAM2ELM_LUC_MAPPING_FILE = "../cpl/mappings/luc.xml";
     std::string GCAM2ELM_WOODHARVEST_MAPPING_FILE = "../cpl/mappings/woodharvest.xml";
     std::string GCAM2ELM_CDENSITY_MAPPING_FILE = "../cpl/mappings/cdensity.xml";
+    std::string GCAM2ELM_DEGDAYS_MAPPING_FILE = "../cpl/mappings/degree_days.xml";
     std::string GCAM2ELM_GLUMAP = "../cpl/mapping/gcam2glm_mapping.csv";
     std::string GCAM2ELM_BASELU = "../cpl/data/initial_state_LUH2_2015_v3.nc";
     std::string GCAM2ELM_BASEBIOMASS = "../cpl/data/vba_LUH1format.nc";
@@ -99,17 +100,20 @@ int main( ) {
     std::string BASE_NPP_FILE = "../cpl/data/base_f09_annAvgMonthly_2010-2014_npp.csv";
     std::string BASE_HR_FILE = "../cpl/data/base_f09_annAvgMonthly_2010-2014_hr.csv";
     std::string BASE_PFT_FILE = "../cpl/data/base_f09_annAvgMonthly_2010-2014_pft_wt.csv";
+    std::string BASE_HDD_FILE = "../cpl/data/base_f09_annAvg_2010-2014_hdd.csv";
+    std::string BASE_CDD_FILE = "../cpl/data/base_f09_annAvg_2010-2014_cdd.csv";
     std::string SCALAR_SOURCE_DIR = "../cpl/data/"; // Placeholder: Default scalar source directory
-
+    std::string POP_DENSITY_FILE = "../cpl/data/pop_density.csv";
+    std::string LAND_FRAC_FILE = "../cpl/data/land_frac.csv";
 
     // these are for Convergence downscaling
-    std::string CO2_GCAM_FILE = "../cpl/data/GCAMRegionalCO2Data.csv";
-    std::string COUNTRY2GRID_MAP = "../cpl/data/elm0.9x1.25tocountry_mapping_iso.csv";
-    std::string COUNTRY2REGION_MAP = "../cpl/data/iso_GCAM_regID_32reg.csv";
-    std::string GDP_GCAM_FILE = "../cpl/data/GCAMRegionalGDPData.csv";
-    std::string GDP_IIASA_FILE = "../cpl/data/IIASAGDPData.csv";
-    std::string POP_GCAM_FILE = "../cpl/data/GCAMRegionalPOPData.csv";
-    std::string POP_IIASA_FILE = "../cpl/data/IIASAPOPData.csv";
+    std::string CO2_GCAM_FILE = "../data/GCAMRegionalCO2Data.csv";
+    std::string COUNTRY2GRID_MAP = "../data/elm0.9x1.25tocountry_mapping_iso.csv";
+    std::string COUNTRY2REGION_MAP = "../data/iso_GCAM_regID_32reg.csv";
+    std::string GDP_GCAM_FILE = "../data/GCAMRegionalGDPData.csv";
+    std::string GDP_IIASA_FILE = "../data/IIASAGDPData.csv";
+    std::string POP_GCAM_FILE = "../data/GCAMRegionalPOPData.csv";
+    std::string POP_IIASA_FILE = "../data/IIASAPOPData.csv";
 
     std::string FDYNDAT_EHC = "./surfdata_iESM_dyn.nc";
 
@@ -119,13 +123,16 @@ int main( ) {
     bool READ_SCALARS = false;
     bool WRITE_CO2 = true; // if true will write to a file
     bool WRITE_SCALARS = true; // if true will write to a file
-    bool GCAM_SPINUP = false;   // if true a gcam spinup will run; otherwise restarts from restart files
+    bool GCAM_SPINUP = true;   // if true a gcam spinup will run; otherwise restarts from restart files
+    bool READ_HDD_CDD = false;
+    bool WRITE_HDD_CDD = true;
     bool RUN_GCAM = true;
 
     // Define coupling control variables
     // These booleans define what is passed between GCAM & E3SM.
     bool ELM_EHC_AGYIELD_SCALING = true; // If TRUE, changes in land productivity from ELM scale ag yield in GCAM.
     bool ELM_EHC_CARBON_SCALING = true; // If TRUE, changes in land productivity from ELM scale carbon density in GCAM.
+    bool ELM_EHC_HDD_CDD = true; // If TRUE, changes HDD CDD passed from ELM to GCAM.
     bool EHC_EAM_CO2_EMISSIONS = true; // If TRUE, energy system CO2 is passed from GCAM to EAM.
     
     // Define size control variables
@@ -146,6 +153,8 @@ int main( ) {
     int* NUM_EHC2ELM_LANDTYPES = &numLT;
     int numES = 3;
     int* NUM_EMISS_SECTORS = &numES;
+    int numER = 32;
+    int* NUM_EMISS_REGIONS = &numER;
     int numEC = 238;
     int* NUM_EMISS_COUNTRIES = &numEC;
     int numP = 20;
@@ -214,6 +223,8 @@ if (false) {
             GCAM2ELM_WOODHARVEST_MAPPING_FILE = value;
         } else if ( name == "GCAM2ELM_CDENSITY_MAPPING_FILE" ) {
             GCAM2ELM_CDENSITY_MAPPING_FILE = value;
+        } else if ( name == "GCAM2ELM_DEGDAYS_MAPPING_FILE" ) {
+            GCAM2ELM_DEGDAYS_MAPPING_FILE = value;
         } else if ( name == "GCAM2ELM_GLUMAP" ) {
             GCAM2ELM_GLUMAP = value;
         } else if ( name == "GCAM2ELM_BASELU" ) {
@@ -230,6 +241,10 @@ if (false) {
             BASE_HR_FILE = value;
         } else if ( name == "BASE_PFT_FILE" ) {
             BASE_PFT_FILE = value;
+        } else if ( name == "BASE_HDD_FILE" ) {
+            BASE_HDD_FILE = value;
+        } else if ( name == "BASE_CDD_FILE" ) {
+            BASE_CDD_FILE = value;
         } else if ( name == "SCALAR_SOURCE_DIR" ) {
             SCALAR_SOURCE_DIR = value;
         } else if ( name == "CO2_GCAM_FILE" ) {
@@ -248,22 +263,28 @@ if (false) {
             POP_IIASA_FILE = value;
         } else if ( name == "FDYNDAT_EHC" ) {
             FDYNDAT_EHC = value;
-	} else if ( name == "SURFACE_CO2_DOWNSCALING_METHOD" ) {
+	    } else if ( name == "SURFACE_CO2_DOWNSCALING_METHOD" ) {
             SURFACE_CO2_DOWNSCALING_METHOD = value;
         } else if ( name == "READ_SCALARS" ) {
             istringstream(value) >> std::boolalpha >> READ_SCALARS;
+        } else if ( name == "READ_HDD_CDD" ) {
+            istringstream(value) >> std::boolalpha >> READ_HDD_CDD;
         } else if ( name == "WRITE_CO2" ) {
             istringstream(value) >> std::boolalpha >> WRITE_CO2;
         } else if ( name == "WRITE_SCALARS" ) {
             istringstream(value) >> std::boolalpha >> WRITE_SCALARS;
+        } else if ( name == "WRITE_HDD_CDD" ) {
+            istringstream(value) >> std::boolalpha >> WRITE_HDD_CDD;
         } else if ( name == "GCAM_SPINUP" ) {
             istringstream(value) >> std::boolalpha >> GCAM_SPINUP;
         } else if ( name == "RUN_GCAM" ) {
             istringstream(value) >> std::boolalpha >> RUN_GCAM;
-	} else if ( name == "ELM_EHC_AGYIELD_SCALING" ) {
+	    } else if ( name == "ELM_EHC_AGYIELD_SCALING" ) {
             istringstream(value) >> std::boolalpha >> ELM_EHC_AGYIELD_SCALING;
         } else if ( name == "ELM_EHC_CARBON_SCALING" ) {
             istringstream(value) >> std::boolalpha >> ELM_EHC_CARBON_SCALING;
+        } else if ( name == "ELM_EHC_HDD_CDD" ) {
+            istringstream(value) >> std::boolalpha >> ELM_EHC_HDD_CDD;
         } else if ( name == "EHC_EAM_CO2_EMISSIONS" ) {
             istringstream(value) >> std::boolalpha >> EHC_EAM_CO2_EMISSIONS;
         } else if ( name == "NUM_LAT" ) {
@@ -274,7 +295,7 @@ if (false) {
             *NUM_PFT = std::stoi(value);
         } else if ( name == "NUM_HARVEST" ) {
             *NUM_HARVEST = std::stoi(value);
-	} else if ( name == "NUM_GCAM_ENERGY_REGIONS" ) {
+	    } else if ( name == "NUM_GCAM_ENERGY_REGIONS" ) {
             *NUM_GCAM_ENERGY_REGIONS = std::stoi(value);
         } else if ( name == "NUM_GCAM_LAND_REGIONS" ) {
             *NUM_GCAM_LAND_REGIONS = std::stoi(value);
@@ -286,7 +307,7 @@ if (false) {
             *NUM_EMISS_COUNTRIES = std::stoi(value);
         } else if ( name == "NUM_PERIODS" ) {
             *NUM_PERIODS = std::stoi(value);
-	}else {
+	    } else {
             coupleLog.setLevel( ILogger::ERROR );
             coupleLog << "Invalid Namelist Variable" << endl;
         }
@@ -312,7 +333,7 @@ if (false) {
  
     // Initialize GCAM
     p_obj->initGCAM(YYYYMMDD, CASE_NAME, GCAM_CONFIG, GCAM2ELM_CO2_MAPPING_FILE, GCAM2ELM_LUC_MAPPING_FILE,
-                    GCAM2ELM_WOODHARVEST_MAPPING_FILE, GCAM2ELM_CDENSITY_MAPPING_FILE,
+                    GCAM2ELM_WOODHARVEST_MAPPING_FILE, GCAM2ELM_CDENSITY_MAPPING_FILE, GCAM2ELM_DEGDAYS_MAPPING_FILE,
                     BASE_GCAM_CO2_FILE, BASE_CO2_SURFACE_FILE, BASE_CO2_SHIPMENT_FILE, BASE_CO2_AIRCRAFT_FILE,
                     gcamiarea, NUM_LON, NUM_LAT, NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_SECTORS, RESTART_RUN);
     
@@ -321,7 +342,11 @@ if (false) {
     double *gcamipftfract = new double [(*NUM_LAT) * (*NUM_LON) * (*NUM_PFT)]();
     double *gcaminpp = new double [(*NUM_LAT) * (*NUM_LON) * (*NUM_PFT)]();
     double *gcamihr = new double [(*NUM_LAT) * (*NUM_LON) * (*NUM_PFT)]();
-    double *gcamoluc = new double [(*NUM_GCAM_LAND_REGIONS) * (*NUM_EHC2ELM_LANDTYPES)]();
+    double *gcamhdd = new double [(*NUM_LAT) * (*NUM_LON)]();
+    double *gcamcdd = new double [(*NUM_LAT) * (*NUM_LON)]();
+    double *gcampopdensity = new double [(*NUM_LAT) * (*NUM_LON)]();
+    double *gcamlandfrac = new double [(*NUM_LAT) * (*NUM_LON)]();
+    double *gcamoluc = new double [(*NUM_GCAM_LAND_REGIONS) * (*NUM_EHC2ELM_LANDTYPES)];
     double *gcamoemiss = new double [(*NUM_EMISS_SECTORS) * (*NUM_EMISS_REGIONS)](); // Emissions by sector and region (not gridded)
     double *gcamoco2sfcjan = new double [(*NUM_LAT) * (*NUM_LON)](); // Emissions data is monthly
     double *gcamoco2sfcfeb = new double [(*NUM_LAT) * (*NUM_LON)](); // Emissions data is monthly
@@ -363,6 +388,7 @@ if (false) {
     /*
      STEP 4: RUN GCAM
      */
+    
     if (RUN_FULL_SCENARIO) {
         for ( int y = 2015; y < 2100; y++ ){
             int ymd = y * 10000;
@@ -383,18 +409,33 @@ if (false) {
                     
                 // Read in PFT weight in grid cell
                 tempPFTData.readSpatialDataCSV(BASE_PFT_FILE, true, true, false, gcamipftfract);
+
+                // Read in heating and cooling degree day values for the grid cells
+                // Modification by Eva Sinha from (true, true, false) to (true, false, false)
+                // since HDD/CDD, pop density and land frac data is at grid level and has no pftID
+                ASpatialData tempDegreeDaysData((*NUM_LAT) * (*NUM_LON));
+                tempDegreeDaysData.readSpatialDataCSV(BASE_HDD_FILE, true, false, false, gcamhdd);
+                tempDegreeDaysData.readSpatialDataCSV(BASE_CDD_FILE, true, false, false, gcamcdd);
+
+                // Read in population density values for the grid cells, where the area refers to the total area (both land and ocean) of the grid cell
+                tempDegreeDaysData.readSpatialDataCSV(POP_DENSITY_FILE, true, false, false, gcampopdensity);
+
+                // Read in land fractions (values range between 0 and 1) for the grid cells
+                tempDegreeDaysData.readSpatialDataCSV(LAND_FRAC_FILE, true, false, false, gcamlandfrac);
             }
 
             
             // Run model
             p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss,
                            BASE_GCAM_LU_WH_FILE, BASE_GCAM_CO2_FILE, GCAM_SPINUP, 
-                           gcamiarea, gcamipftfract, gcaminpp, gcamihr,
+                           gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamhdd, gcamcdd, gcampopdensity, gcamlandfrac,
                            NUM_LON, NUM_LAT, NUM_PFT, NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
-                           ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, SCALAR_SOURCE_DIR, WRITE_SCALARS,
-                           ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE, RESTART_RUN);
+                           ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, SCALAR_SOURCE_DIR, WRITE_SCALARS, READ_HDD_CDD, WRITE_HDD_CDD,
+                           ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, ELM_EHC_HDD_CDD, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE,
+                           BASE_HDD_FILE, BASE_CDD_FILE, RESTART_RUN);
 
 
+            // TODO: Verify that removal of the following is correct: BASE_CO2_SURFACE_FILE, BASE_CO2EMISS_SURFACE, BASE_CO2_AIRCRAFT_FILE, BASE_CO2EMISS_AIRCRAFT,
             if( EHC_EAM_CO2_EMISSIONS ) {
             p_obj->downscaleEmissionsGCAM(gcamoemiss,
                                       gcamoco2sfcjan, gcamoco2sfcfeb, gcamoco2sfcmar, gcamoco2sfcapr,
@@ -438,17 +479,31 @@ if (false) {
             // Read in area of grid cell
             ASpatialData tempData((*NUM_LAT) * (*NUM_LON));
             tempData.readSpatialDataCSV(BASE_CELL_AREA_FILE, true, false, false, gcamiarea);
+
+            // Read in degree day values for the grid cells
+            // Modification by Eva Sinha from (true, true, false) to (true, false, false)
+            // since HDD/CDD, pop density and land frac data is at grid level and has no pftID
+            ASpatialData tempDegreeDaysData((*NUM_LAT) * (*NUM_LON));
+            tempDegreeDaysData.readSpatialDataCSV(BASE_HDD_FILE, true, false, false, gcamhdd);
+            tempDegreeDaysData.readSpatialDataCSV(BASE_CDD_FILE, true, false, false, gcamcdd);
+
+            // Read in population density values for the grid cells, where the area refers to the total area (both land and ocean) of the grid cell
+            tempDegreeDaysData.readSpatialDataCSV(POP_DENSITY_FILE, true, false, false, gcampopdensity);
+
+            // Read in land fractions (values range between 0 and 1) for the grid cells
+            tempDegreeDaysData.readSpatialDataCSV(LAND_FRAC_FILE, true, false, false, gcamlandfrac);
         }
-       
+        
         p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss,
                            BASE_GCAM_LU_WH_FILE, BASE_GCAM_CO2_FILE, GCAM_SPINUP,
-                           gcamiarea, gcamipftfract, gcaminpp, gcamihr,
+                           gcamiarea, gcamipftfract, gcaminpp, gcamihr, gcamhdd, gcamcdd, gcampopdensity, gcamlandfrac,
                            NUM_LON, NUM_LAT, NUM_PFT, NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
-                           ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, SCALAR_SOURCE_DIR, WRITE_SCALARS,
-                           ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE, RESTART_RUN);
+                           ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, SCALAR_SOURCE_DIR, WRITE_SCALARS, READ_HDD_CDD, WRITE_HDD_CDD,
+                           ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, ELM_EHC_HDD_CDD, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE,
+                           BASE_HDD_FILE, BASE_CDD_FILE, RESTART_RUN);
 
- 
- 
+        /*
+        // TODO: Verify that removal of the following is correct: BASE_CO2_SURFACE_FILE, BASE_CO2EMISS_SURFACE, BASE_CO2_AIRCRAFT_FILE, BASE_CO2EMISS_AIRCRAFT,
         if( EHC_EAM_CO2_EMISSIONS ) {
             p_obj->downscaleEmissionsGCAM(gcamoemiss,
                                       gcamoco2sfcjan, gcamoco2sfcfeb, gcamoco2sfcmar, gcamoco2sfcapr,
@@ -467,6 +522,7 @@ if (false) {
                                       NUM_LON, NUM_LAT, WRITE_CO2, YYYYMMDD, SURFACE_CO2_DOWNSCALING_METHOD);
 
         }
+                                      */
         
     }
     /*
@@ -480,6 +536,10 @@ if (false) {
     delete [] gcamipftfract;
     delete [] gcaminpp;
     delete [] gcamihr;
+    delete [] gcamhdd;
+    delete [] gcamcdd;
+    delete [] gcampopdensity;
+    delete [] gcamlandfrac;
     delete [] gcamoluc;
     delete [] gcamoemiss;
     delete [] gcamoco2sfcjan;

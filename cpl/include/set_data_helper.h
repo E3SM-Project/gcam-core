@@ -36,6 +36,9 @@
 #include <vector>
 #include <string>
 
+#include "util/base/include/value.h"
+#include "util/base/include/time_vector.h"
+
 class Scenario;
 class FilterStep;
 
@@ -55,16 +58,22 @@ public:
     void run( Scenario* aScenario );
     template<typename T>
     void processData(T& aData);
+    void setLandTechColumn (const std::vector<std::string>& aLandTechColumn);
 private:
-    const std::vector<int>& mYearColumn;
-    const std::vector<std::string>& mRegionColumn;
-    const std::vector<std::string>& mLandTechColumn;
-    const std::vector<double>& mDataVector;
+    const std::vector<int> mYearColumn;
+    const std::vector<std::string> mRegionColumn;
+    std::vector<std::string> mLandTechColumn;
+    const std::vector<double> mDataVector;
     std::vector<FilterStep*> mFilterSteps;
     size_t mRow;
     
     std::vector<FilterStep*> parseFilterString(const std::string& aFilterStr );
     FilterStep* parseFilterStepStr( const std::string& aFilterStepStr, int& aCol );
 };
+
+template<> void SetDataHelper::processData(double& aData);
+template<> void SetDataHelper::processData(Value& aData);
+template<> void SetDataHelper::processData(objects::PeriodVector<Value>& aData);
+template<> void SetDataHelper::processData(int& aData);
 
 #endif // __SET_DATA_HELPER_H__

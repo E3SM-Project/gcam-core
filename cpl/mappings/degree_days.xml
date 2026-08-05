@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<remap-data>
+    <column name="region">
+        <!-- order matters here! -->
+        <output-data>USA</output-data>
+        <output-data>Africa_Eastern</output-data>
+        <output-data>Africa_Northern</output-data>
+        <output-data>Africa_Southern</output-data>
+        <output-data>Africa_Western</output-data>
+        <output-data>Australia_NZ</output-data>
+        <output-data>Brazil</output-data>
+        <output-data>Canada</output-data>
+        <output-data>Central America and Caribbean</output-data>
+        <output-data>Central Asia</output-data>
+        <output-data>China</output-data>
+        <output-data>EU-12</output-data>
+        <output-data>EU-15</output-data>
+        <output-data>Europe_Eastern</output-data>
+        <output-data>Europe_Non_EU</output-data>
+        <output-data>European Free Trade Association</output-data>
+        <output-data>India</output-data>
+        <output-data>Indonesia</output-data>
+        <output-data>Japan</output-data>
+        <output-data>Mexico</output-data>
+        <output-data>Middle East</output-data>
+        <output-data>Pakistan</output-data>
+        <output-data>Russia</output-data>
+        <output-data>South Africa</output-data>
+        <output-data>South America_Northern</output-data>
+        <output-data>South America_Southern</output-data>
+        <output-data>South Asia</output-data>
+        <output-data>South Korea</output-data>
+        <output-data>Southeast Asia</output-data>
+        <output-data>Taiwan</output-data>
+        <output-data>Argentina</output-data>
+        <output-data>Colombia</output-data>
+    </column>
+    <column name="service">
+        <output-data>comm heating</output-data>
+        <output-data>comm cooling</output-data>
+        <output-data>resid heating</output-data>
+        <output-data>resid cooling</output-data>
+    </column>
+</remap-data>
