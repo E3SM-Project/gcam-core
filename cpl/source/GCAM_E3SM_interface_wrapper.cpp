@@ -43,7 +43,7 @@ extern "C" {
   void runcgcam_(int *yyyymmdd, double *gcamoluc, double *gcamoemiss, char* aBaseLucGcamFileName, char* aBaseCO2GcamFileName, int *aSpinup,
                  double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
                  int *aNumLon, int *aNumLat, int *aNumPFT, int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod,
-                 char* aMappingFile, int *aFirstCoupledYear, int *aReadScalars, char* aScalarSourceDir, int *aWriteScalars,
+                 char* aMappingFile, int *aFirstCoupledYear, int *aReadScalars, char* aScalarSourceDir, char* aELMDataDir, int *aWriteScalars,
                  int *aScaleAgYield, int *aScaleCarbon, char* aBaseNPPFile, char* aBaseHRFile, char* aBasePFTwtFile, int *aRestartRun) {
   
       // convert to strings and bools where appropriate
@@ -52,6 +52,7 @@ extern "C" {
       bool Spinup = *aSpinup == 1 ? true : false;
       std::string MappingFile(aMappingFile);
       std::string ScalarSourceDir(aScalarSourceDir);
+      std::string ELMDataDir(aELMDataDir);
       std::string baseNPPFile(aBaseNPPFile);
       std::string baseHRFile(aBaseHRFile);
       std::string basePFTwtFile(aBasePFTwtFile);
@@ -64,7 +65,7 @@ extern "C" {
       p_obj->runGCAM(yyyymmdd, gcamoluc, gcamoemiss, BaseLucGcamFileName, BaseCO2GcamFileName, Spinup,
                      aELMArea, aELMPFTFract, aELMNPP, aELMHR,
                      aNumLon, aNumLat, aNumPFT, aNumReg, aNumCty, aNumSector, aNumPeriod,
-                     MappingFile, aFirstCoupledYear, readScalars, ScalarSourceDir, writeScalars,
+                     MappingFile, aFirstCoupledYear, readScalars, ScalarSourceDir, ELMDataDir, writeScalars,
                      scaleAgYield, scaleCarbon, baseNPPFile, baseHRFile, basePFTwtFile, restartRun);
   }
 

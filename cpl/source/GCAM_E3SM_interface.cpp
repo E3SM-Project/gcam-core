@@ -23,6 +23,7 @@
 #include "../include/get_data_helper.h"
 #include "../include/set_data_helper.h"
 #include "../include/carbon_scalers.h"
+#include "../include/aspatial_data.h"
 #include "../include/emiss_downscale.h"
 
 #include <boost/iostreams/device/mapped_file.hpp>
@@ -408,7 +409,7 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
                                    std::string aBaseLucGcamFileName, std::string aBaseCO2GcamFileName, bool aSpinup,
                                    double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
                                    int *aNumLon, int *aNumLat, int *aNumPFT, int *aNumReg, int *aNumCty, int *aNumSector, int *aNumPeriod,
-                                   std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars, std::string aScalarSourceDir,
+                                   std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars, std::string aScalarSourceDir, std::string aELMDataDir,
                                    bool aWriteScalars, bool aScaleAgYield, bool aScaleCarbon,
                                    std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName, bool aRestartRun )
 {
@@ -520,7 +521,7 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
             // try doing this check here instead
             if( e3smYear >=  *aFirstCoupledYear ) {
                setLandProductivityScalingGCAM(yyyymmdd, aELMArea, aELMPFTFract, aELMNPP, aELMHR,
-                            aNumLon, aNumLat, aNumPFT, aMappingFile, aFirstCoupledYear, aReadScalars, aScalarSourceDir,
+                            aNumLon, aNumLat, aNumPFT, aMappingFile, aFirstCoupledYear, aReadScalars, aScalarSourceDir, aELMDataDir,
                             aWriteScalars, aScaleAgYield, aScaleCarbon, aBaseNPPFileName, aBaseHRFileName, aBasePFTWtFileName);
             }
 
@@ -722,7 +723,7 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
 
 void GCAM_E3SM_interface::setLandProductivityScalingGCAM(int *yyyymmdd, double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
                                          int *aNumLon, int *aNumLat, int *aNumPFT, std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars,
-                                         std::string aScalarSourceDir, bool aWriteScalars, bool aScaleAgYield, bool aScaleCarbon,
+                                         std::string aScalarSourceDir, std::string aELMDataDir, bool aWriteScalars, bool aScaleAgYield, bool aScaleCarbon,
                                          std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName) {
     // Get year only of the current date
     // Note that GCAM runs one period ahead of E3SM. We make that adjustment here
@@ -772,6 +773,15 @@ void GCAM_E3SM_interface::setLandProductivityScalingGCAM(int *yyyymmdd, double *
     if( e3smYear >=  *aFirstCoupledYear ) {
         CarbonScalers e3sm2gcam(*aNumLon, *aNumLat, *aNumPFT);
         
+        // Detached ladder: no live land model, so fill the ELM arrays from the ELM-only rung's
+        // files for the year that just completed (the coupled driver hands the IAC the annual
+        // mean of e3smYear-1 at the top of e3smYear). Scalars are then computed exactly as live.
+        if ( !aReadScalars && !aELMDataDir.empty() ) {
+            coupleLog << "In setLandProductivityScalingGCAM, reading ELM data for year " << e3smYear - 1
+                      << " from " << aELMDataDir << endl;
+            readELMDataForYear(aELMDataDir, e3smYear - 1, *aNumLon, *aNumLat, *aNumPFT, aELMPFTFract, aELMNPP, aELMHR);
+        }
+
         // Get scaler information
         // The scalar file name and the year inside refer to the GCAM year they are being applied to
         if ( aReadScalars ) {
@@ -1404,4 +1414,28 @@ void GCAM_E3SM_interface::finalizeGCAM()
     coupleLog.setLevel( ILogger::NOTICE );
     coupleLog << "calling finalize" << endl;
     timer.stop();
+}
+
+/*!
+ * \brief Fill the ELM->GCAM arrays (pft weight, NPP, HR) from files written by an ELM-only run.
+ * \details Files are <aDir>/elm2gcam_<aELMYear>_{pft_wt,npp,hr}.csv in the same format as the
+ *          base_f09_*.csv files (header line; pft_id,lon_ind,lat_ind,value; pft-major, lat, lon
+ *          fastest; full grid). Produced by AgenticE3SM/gcam/elm_h1_to_gcam.py from ELM h1 output.
+ *          Missing files are fatal: a silent zero field would corrupt every scalar of that period.
+ */
+void GCAM_E3SM_interface::readELMDataForYear(const std::string& aDir, int aELMYear, int aNumLon, int aNumLat, int aNumPFT,
+                                             double *aELMPFTFract, double *aELMNPP, double *aELMHR) {
+    ILogger& coupleLog = ILogger::getLogger( "coupling_log" );
+    coupleLog.setLevel( ILogger::NOTICE );
+    const std::string base = aDir + "/elm2gcam_" + std::to_string(aELMYear) + "_";
+    const int n = aNumLon * aNumLat * aNumPFT;
+    ASpatialData tempPFTData(n);
+    // readSpatialDataCSV exits with a coupling_log error if a file is missing
+    tempPFTData.readSpatialDataCSV(base + "npp.csv", true, true, false, aELMNPP);
+    tempPFTData.readSpatialDataCSV(base + "hr.csv", true, true, false, aELMHR);
+    tempPFTData.readSpatialDataCSV(base + "pft_wt.csv", true, true, false, aELMPFTFract);
+    double wsum = 0.0; int nnz = 0;
+    for (int i = 0; i < n; i++) { wsum += aELMPFTFract[i]; if (aELMNPP[i] != 0.0) nnz++; }
+    coupleLog << "readELMDataForYear " << aELMYear << ": sum pft_wt = " << wsum
+              << ", nonzero npp entries = " << nnz << " of " << n << endl;
 }

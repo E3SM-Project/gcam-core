@@ -199,8 +199,15 @@ double ASpatialData::readSpatialDataCSV(std::string aFileName, bool aHasLatLon, 
     string str;
     getline(data, str); // skip the first line
     int row = 0;
+    const int maxRows = mValueVector.size();  // guard (2026-08-31): wrong-resolution CSV must abort, not corrupt the heap
     while (getline(data, str))
     {
+        if ( row >= maxRows ) {
+            ILogger& coupleLog = ILogger::getLogger( "coupling_log" );
+            coupleLog.setLevel( ILogger::ERROR );
+            coupleLog << "File has more rows than the allocated grid (" << maxRows << "): " << aFileName << endl;
+            exit(EXIT_FAILURE);
+        }
         istringstream iss(str);
         string token;
         double value;
@@ -260,8 +267,15 @@ double ASpatialData::readSpatialDataCSV(std::string aFileName, bool aHasLatLon, 
     string str;
     getline(data, str); // skip the first line
     int row = 0;
+    const int maxRows = mValueVector.size();  // guard (2026-08-31): a wrong-resolution CSV must abort, not corrupt the heap
     while (getline(data, str))
     {
+        if ( row >= maxRows ) {
+            ILogger& coupleLog = ILogger::getLogger( "coupling_log" );
+            coupleLog.setLevel( ILogger::ERROR );
+            coupleLog << "File has more rows than the allocated grid (" << maxRows << "): " << aFileName << endl;
+            exit(EXIT_FAILURE);
+        }
         istringstream iss(str);
         string token;
         double value;

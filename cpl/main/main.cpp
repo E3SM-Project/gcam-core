@@ -67,7 +67,7 @@ int main( ) {
     // this file needs to be copied to ../cpl/data because it is not a namelist item
     // it is located in: .../inputdata/iac/giac/gcam/gcam_6_0/data, prefix is machine dependent
     // the other ../cpl/data files below also have to be copied until this namelist read is fixed
-    std::string BASE_CELL_AREA_FILE = "../cpl/data/base_f09_cell_area.csv"
+    std::string BASE_CELL_AREA_FILE = "../cpl/data/base_f09_cell_area.csv";
 
     // These are the EHC namelist variables for GCAM
     //   this is the full namelist, even though not all are needed here
@@ -100,6 +100,9 @@ int main( ) {
     std::string BASE_HR_FILE = "../cpl/data/base_f09_annAvgMonthly_2010-2014_hr.csv";
     std::string BASE_PFT_FILE = "../cpl/data/base_f09_annAvgMonthly_2010-2014_pft_wt.csv";
     std::string SCALAR_SOURCE_DIR = "../cpl/data/"; // Placeholder: Default scalar source directory
+    // Detached ladder: directory of elm2gcam_<year>_{npp,hr,pft_wt}.csv from an ELM-only run
+    // (AgenticE3SM/gcam/elm_h1_to_gcam.py). Empty = legacy behaviour (static BASE_*_FILE every year).
+    std::string ELM_DATA_DIR = "";
 
 
     // these are for Convergence downscaling
@@ -232,6 +235,8 @@ if (false) {
             BASE_PFT_FILE = value;
         } else if ( name == "SCALAR_SOURCE_DIR" ) {
             SCALAR_SOURCE_DIR = value;
+        } else if ( name == "ELM_DATA_DIR" ) {
+            ELM_DATA_DIR = value;
         } else if ( name == "CO2_GCAM_FILE" ) {
             CO2_GCAM_FILE = value;
         } else if ( name == "COUNTRY2GRID_MAP" ) {
@@ -371,18 +376,19 @@ if (false) {
             // land productivity scaling selection is now done within runGCAM
             if ( READ_ELM_FROM_FILE ) {
                 // Read the ELM data from a file and then pass it to setDensityGCAM below
-                // These are currently the new base files, can make others from a different year
                 // area has already been read in
-
-                // Read in average NPP
-                ASpatialData tempPFTData((*NUM_LAT) * (*NUM_LON) * (*NUM_PFT));
-                tempPFTData.readSpatialDataCSV(BASE_NPP_FILE, true, true, false, gcaminpp);
-                    
-                // Read in average HR
-                tempPFTData.readSpatialDataCSV(BASE_HR_FILE, true, true, false, gcamihr);
-                    
-                // Read in PFT weight in grid cell
-                tempPFTData.readSpatialDataCSV(BASE_PFT_FILE, true, true, false, gcamipftfract);
+                if ( !ELM_DATA_DIR.empty() ) {
+                    // Detached ladder: year-specific ELM data. The coupled driver hands the IAC the
+                    // annual mean of the year that just completed (y-1) at the top of year y.
+                    GCAM_E3SM_interface::readELMDataForYear(ELM_DATA_DIR, y - 1, *NUM_LON, *NUM_LAT, *NUM_PFT,
+                                                            gcamipftfract, gcaminpp, gcamihr);
+                } else {
+                    // Legacy: the same static base files every year (gives GCAM a fixed land surface)
+                    ASpatialData tempPFTData((*NUM_LAT) * (*NUM_LON) * (*NUM_PFT));
+                    tempPFTData.readSpatialDataCSV(BASE_NPP_FILE, true, true, false, gcaminpp);
+                    tempPFTData.readSpatialDataCSV(BASE_HR_FILE, true, true, false, gcamihr);
+                    tempPFTData.readSpatialDataCSV(BASE_PFT_FILE, true, true, false, gcamipftfract);
+                }
             }
 
             
@@ -391,7 +397,7 @@ if (false) {
                            BASE_GCAM_LU_WH_FILE, BASE_GCAM_CO2_FILE, GCAM_SPINUP, 
                            gcamiarea, gcamipftfract, gcaminpp, gcamihr,
                            NUM_LON, NUM_LAT, NUM_PFT, NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
-                           ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, SCALAR_SOURCE_DIR, WRITE_SCALARS,
+                           ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, SCALAR_SOURCE_DIR, ELM_DATA_DIR, WRITE_SCALARS,
                            ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE, RESTART_RUN);
 
 
@@ -444,7 +450,7 @@ if (false) {
                            BASE_GCAM_LU_WH_FILE, BASE_GCAM_CO2_FILE, GCAM_SPINUP,
                            gcamiarea, gcamipftfract, gcaminpp, gcamihr,
                            NUM_LON, NUM_LAT, NUM_PFT, NUM_GCAM_ENERGY_REGIONS, NUM_EMISS_COUNTRIES, NUM_EMISS_SECTORS, NUM_PERIODS,
-                           ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, SCALAR_SOURCE_DIR, WRITE_SCALARS,
+                           ELM2GCAM_MAPPING_FILE, FIRST_COUPLED_YEAR, READ_SCALARS, SCALAR_SOURCE_DIR, ELM_DATA_DIR, WRITE_SCALARS,
                            ELM_EHC_AGYIELD_SCALING, ELM_EHC_CARBON_SCALING, BASE_NPP_FILE, BASE_HR_FILE, BASE_PFT_FILE, RESTART_RUN);
 
  
