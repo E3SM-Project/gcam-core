@@ -183,134 +183,6 @@ int main( ) {
     ILogger& coupleLog = ILogger::getLogger( "coupling_log" );
     coupleLog.setLevel( ILogger::NOTICE );
 
-// this needs to be fixed
-if (false) {
-
-    ifstream namelist("user_nl_gcam");
-    if (!namelist.is_open())
-    {
-        coupleLog.setLevel( ILogger::ERROR );
-        coupleLog << "Namelist not found: user_nl_gcam" << endl;
-        exit(EXIT_FAILURE);
-    }
-    string str;
-    getline(namelist, str); // skip the first line
-    while (getline(namelist, str))
-    {
-        istringstream iss(str);
-        string name;
-        string value;
-
-        getline(iss, name, ' ');
-        getline(iss, value, ' '); // Throw away the equals sign
-        getline(iss, value, ' ');
-        if ( name == "CASE_NAME" ) {
-            CASE_NAME = value;
-        } else if ( name == "GCAM_CONFIG" ) {
-            GCAM_CONFIG = value;
-        } else if ( name == "BASE_CO2_SURFACE_FILE" ) {
-            BASE_CO2_SURFACE_FILE = value;
-        } else if ( name == "BASE_CO2_AIRCRAFT_FILE" ) {
-            BASE_CO2_AIRCRAFT_FILE = value;
-        } else if ( name == "BASE_CO2_SHIPMENT_FILE" ) {
-            BASE_CO2_SHIPMENT_FILE = value;
-        } else if ( name == "BASE_GCAM_CO2_FILE" ) {
-            BASE_GCAM_CO2_FILE = value;
-        } else if ( name == "BASE_GCAM_LU_WH_FILE" ) {
-            BASE_GCAM_LU_WH_FILE = value;
-        } else if ( name == "GCAM2ELM_CO2_MAPPING_FILE" ) {
-            GCAM2ELM_CO2_MAPPING_FILE = value;
-        } else if ( name == "GCAM2ELM_LUC_MAPPING_FILE" ) {
-            GCAM2ELM_LUC_MAPPING_FILE = value;
-        } else if ( name == "GCAM2ELM_WOODHARVEST_MAPPING_FILE" ) {
-            GCAM2ELM_WOODHARVEST_MAPPING_FILE = value;
-        } else if ( name == "GCAM2ELM_CDENSITY_MAPPING_FILE" ) {
-            GCAM2ELM_CDENSITY_MAPPING_FILE = value;
-        } else if ( name == "GCAM2ELM_DEGDAYS_MAPPING_FILE" ) {
-            GCAM2ELM_DEGDAYS_MAPPING_FILE = value;
-        } else if ( name == "GCAM2ELM_GLUMAP" ) {
-            GCAM2ELM_GLUMAP = value;
-        } else if ( name == "GCAM2ELM_BASELU" ) {
-            GCAM2ELM_BASELU = value;
-        } else if ( name == "GCAM2ELM_BASEBIOMASS" ) {
-            GCAM2ELM_BASEBIOMASS = value;
-        } else if ( name == "GCAM_GRIDFILE" ) {
-            GCAM_GRIDFILE = value;
-        } else if ( name == "ELM2GCAM_MAPPING_FILE" ) {
-            ELM2GCAM_MAPPING_FILE = value;
-        } else if ( name == "BASE_NPP_FILE" ) {
-            BASE_NPP_FILE = value;
-        } else if ( name == "BASE_HR_FILE" ) {
-            BASE_HR_FILE = value;
-        } else if ( name == "BASE_PFT_FILE" ) {
-            BASE_PFT_FILE = value;
-        } else if ( name == "BASE_HDD_FILE" ) {
-            BASE_HDD_FILE = value;
-        } else if ( name == "BASE_CDD_FILE" ) {
-            BASE_CDD_FILE = value;
-        } else if ( name == "SCALAR_SOURCE_DIR" ) {
-            SCALAR_SOURCE_DIR = value;
-        } else if ( name == "CO2_GCAM_FILE" ) {
-            CO2_GCAM_FILE = value;
-        } else if ( name == "COUNTRY2GRID_MAP" ) {
-            COUNTRY2GRID_MAP = value;
-        } else if ( name == "COUNTRY2REGION_MAP" ) {
-            COUNTRY2REGION_MAP = value;
-        } else if ( name == "GDP_GCAM_FILE" ) {
-            GDP_GCAM_FILE = value;
-        } else if ( name == "GDP_IIASA_FILE" ) {
-            GDP_IIASA_FILE = value;
-        } else if ( name == "POP_GCAM_FILE" ) {
-            POP_GCAM_FILE = value;
-        } else if ( name == "POP_IIASA_FILE" ) {
-            POP_IIASA_FILE = value;
-        } else if ( name == "FDYNDAT_EHC" ) {
-            FDYNDAT_EHC = value;
-	    } else if ( name == "SURFACE_CO2_DOWNSCALING_METHOD" ) {
-            SURFACE_CO2_DOWNSCALING_METHOD = value;
-        } else if ( name == "READ_SCALARS" ) {
-            istringstream(value) >> std::boolalpha >> READ_SCALARS;
-        } else if ( name == "READ_HDD_CDD" ) {
-            istringstream(value) >> std::boolalpha >> READ_HDD_CDD;
-        } else if ( name == "WRITE_CO2" ) {
-            istringstream(value) >> std::boolalpha >> WRITE_CO2;
-        } else if ( name == "WRITE_SCALARS" ) {
-            istringstream(value) >> std::boolalpha >> WRITE_SCALARS;
-        } else if ( name == "WRITE_HDD_CDD" ) {
-            istringstream(value) >> std::boolalpha >> WRITE_HDD_CDD;
-        } else if ( name == "GCAM_SPINUP" ) {
-            istringstream(value) >> std::boolalpha >> GCAM_SPINUP;
-        } else if ( name == "RUN_GCAM" ) {
-            istringstream(value) >> std::boolalpha >> RUN_GCAM;
-	    } else if ( name == "ELM_EHC_AGYIELD_SCALING" ) {
-            istringstream(value) >> std::boolalpha >> ELM_EHC_AGYIELD_SCALING;
-        } else if ( name == "ELM_EHC_CARBON_SCALING" ) {
-            istringstream(value) >> std::boolalpha >> ELM_EHC_CARBON_SCALING;
-        } else if ( name == "ELM_EHC_HDD_CDD" ) {
-            istringstream(value) >> std::boolalpha >> ELM_EHC_HDD_CDD;
-        } else if ( name == "EHC_EAM_CO2_EMISSIONS" ) {
-            istringstream(value) >> std::boolalpha >> EHC_EAM_CO2_EMISSIONS;
-        } else if ( name == "NUM_LAT" ) {
-            *NUM_LAT = std::stoi(value);
-        } else if ( name == "NUM_LON" ) {
-            *NUM_LON = std::stoi(value);
-        } else if ( name == "NUM_PFT" ) {
-            *NUM_PFT = std::stoi(value);
-        } else if ( name == "NUM_HARVEST" ) {
-            *NUM_HARVEST = std::stoi(value);
-	    } else if ( name == "NUM_GCAM_ENERGY_REGIONS" ) {
-            *NUM_GCAM_ENERGY_REGIONS = std::stoi(value);
-        } else if ( name == "NUM_GCAM_LAND_REGIONS" ) {
-            *NUM_GCAM_LAND_REGIONS = std::stoi(value);
-        } else if ( name == "NUM_EHC2ELM_LANDTYPES" ) {
-            *NUM_EHC2ELM_LANDTYPES = std::stoi(value);
-        } else if ( name == "NUM_EMISS_SECTORS" ) {
-            *NUM_EMISS_SECTORS = std::stoi(value);
-        } else if ( name == "NUM_EMISS_COUNTRIES" ) {
-            *NUM_EMISS_COUNTRIES = std::stoi(value);
-        } else if ( name == "NUM_PERIODS" ) {
-            *NUM_PERIODS = std::stoi(value);
-	    } else {
         ifstream namelist("user_nl_gcam");
         if (!namelist.is_open())
         {
@@ -368,6 +240,10 @@ if (false) {
                 BASE_HR_FILE = value;
             } else if ( name == "BASE_PFT_FILE" ) {
                 BASE_PFT_FILE = value;
+            } else if ( name == "BASE_HDD_FILE" ) {
+                BASE_HDD_FILE = value;
+            } else if ( name == "BASE_CDD_FILE" ) {
+                BASE_CDD_FILE = value;
             } else if ( name == "SCALAR_SOURCE_DIR" ) {
                 SCALAR_SOURCE_DIR = value;
             } else if ( name == "CO2_GCAM_FILE" ) {
@@ -390,10 +266,14 @@ if (false) {
                 SURFACE_CO2_DOWNSCALING_METHOD = value;
             } else if ( name == "READ_SCALARS" ) {
                 istringstream(value) >> std::boolalpha >> READ_SCALARS;
+            } else if ( name == "READ_HDD_CDD" ) {
+                istringstream(value) >> std::boolalpha >> READ_HDD_CDD;
             } else if ( name == "WRITE_CO2" ) {
                 istringstream(value) >> std::boolalpha >> WRITE_CO2;
             } else if ( name == "WRITE_SCALARS" ) {
                 istringstream(value) >> std::boolalpha >> WRITE_SCALARS;
+            } else if ( name == "WRITE_HDD_CDD" ) {
+                istringstream(value) >> std::boolalpha >> WRITE_HDD_CDD;
             } else if ( name == "GCAM_SPINUP" ) {
                 istringstream(value) >> std::boolalpha >> GCAM_SPINUP;
             } else if ( name == "RUN_GCAM" ) {
@@ -402,6 +282,8 @@ if (false) {
                 istringstream(value) >> std::boolalpha >> ELM_EHC_AGYIELD_SCALING;
             } else if ( name == "ELM_EHC_CARBON_SCALING" ) {
                 istringstream(value) >> std::boolalpha >> ELM_EHC_CARBON_SCALING;
+            } else if ( name == "ELM_EHC_HDD_CDD" ) {
+                istringstream(value) >> std::boolalpha >> ELM_EHC_HDD_CDD;
             } else if ( name == "EHC_EAM_CO2_EMISSIONS" ) {
                 istringstream(value) >> std::boolalpha >> EHC_EAM_CO2_EMISSIONS;
             } else if ( name == "NUM_LAT" ) {
