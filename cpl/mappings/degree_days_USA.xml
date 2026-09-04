@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<remap-data>
+    <column name="region">
+        <!-- order matters here! -->
+        <output-data>USA</output-data>
+        <output-data>Africa_Eastern</output-data>
+        <output-data>Africa_Northern</output-data>
+        <output-data>Africa_Southern</output-data>
+        <output-data>Africa_Western</output-data>
+        <output-data>Australia_NZ</output-data>
+        <output-data>Brazil</output-data>
+        <output-data>Canada</output-data>
+        <output-data>Central America and Caribbean</output-data>
+        <output-data>Central Asia</output-data>
+        <output-data>China</output-data>
+        <output-data>EU-12</output-data>
+        <output-data>EU-15</output-data>
+        <output-data>Europe_Eastern</output-data>
+        <output-data>Europe_Non_EU</output-data>
+        <output-data>European Free Trade Association</output-data>
+        <output-data>India</output-data>
+        <output-data>Indonesia</output-data>
+        <output-data>Japan</output-data>
+        <output-data>Mexico</output-data>
+        <output-data>Middle East</output-data>
+        <output-data>Pakistan</output-data>
+        <output-data>Russia</output-data>
+        <output-data>South Africa</output-data>
+        <output-data>South America_Northern</output-data>
+        <output-data>South America_Southern</output-data>
+        <output-data>South Asia</output-data>
+        <output-data>South Korea</output-data>
+        <output-data>Southeast Asia</output-data>
+        <output-data>Taiwan</output-data>
+        <output-data>Argentina</output-data>
+        <output-data>Colombia</output-data>
+        <!-- GCAM-USA states -->
+        <output-data>AK</output-data>
+        <output-data>AL</output-data>
+        <output-data>AR</output-data>
+        <output-data>AZ</output-data>
+        <output-data>CA</output-data>
+        <output-data>CO</output-data>
+        <output-data>CT</output-data>
+        <output-data>DC</output-data>
+        <output-data>DE</output-data>
+        <output-data>FL</output-data>
+        <output-data>GA</output-data>
+        <output-data>HI</output-data>
+        <output-data>IA</output-data>
+        <output-data>ID</output-data>
+        <output-data>IL</output-data>
+        <output-data>IN</output-data>
+        <output-data>KS</output-data>
+        <output-data>KY</output-data>
+        <output-data>LA</output-data>
+        <output-data>MA</output-data>
+        <output-data>MD</output-data>
+        <output-data>ME</output-data>
+        <output-data>MI</output-data>
+        <output-data>MN</output-data>
+        <output-data>MO</output-data>
+        <output-data>MS</output-data>
+        <output-data>MT</output-data>
+        <output-data>NC</output-data>
+        <output-data>ND</output-data>
+        <output-data>NE</output-data>
+        <output-data>NH</output-data>
+        <output-data>NJ</output-data>
+        <output-data>NM</output-data>
+        <output-data>NV</output-data>
+        <output-data>NY</output-data>
+        <output-data>OH</output-data>
+        <output-data>OK</output-data>
+        <output-data>OR</output-data>
+        <output-data>PA</output-data>
+        <output-data>RI</output-data>
+        <output-data>SC</output-data>
+        <output-data>SD</output-data>
+        <output-data>TN</output-data>
+        <output-data>TX</output-data>
+        <output-data>UT</output-data>
+        <output-data>VA</output-data>
+        <output-data>VT</output-data>
+        <output-data>WA</output-data>
+        <output-data>WI</output-data>
+        <output-data>WV</output-data>
+        <output-data>WY</output-data>
+    </column>
+    <column name="service">
+        <output-data>comm heating</output-data>
+        <output-data>comm cooling</output-data>
+        <output-data>resid heating</output-data>
+        <output-data>resid cooling</output-data>
+    </column>
+</remap-data>
