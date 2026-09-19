@@ -484,13 +484,12 @@ int LogBroyden::bsolve(VecFVec &F, UBVECTOR &x, UBVECTOR &fx,
           // singular or badly messed up Jacobian, going to have to use SVD
           solverLog << "Doing SVD, old dxmag:  " << dxmag;
 
-          // Sanitize non-finite entries and floor near-zero diagonal entries
-          // before the SVD solve: a market whose response has collapsed to
-          // ~0 leaves its whole row/column near-zero, and Eigen::BDCSVD can
-          // segfault on that structurally singular pattern.
+          // Sanitize non-finite entries before the SVD solve. Don't floor
+          // near-zero diagonal entries: the threshold-0 pseudoinverse below
+          // already rank-truncates a true zero singular value; flooring it
+          // would make that direction invertible instead of suppressed.
           UBMATRIX Bsvd(B);
           int numSanitized = 0;
-          const double diagFloor = 1.0e-8;
           for(int i = 0; i < Bsvd.rows(); ++i) {
               for(int j = 0; j < Bsvd.cols(); ++j) {
                   if(!util::isValidNumber(Bsvd(i,j))) {
@@ -498,14 +497,10 @@ int LogBroyden::bsolve(VecFVec &F, UBVECTOR &x, UBVECTOR &fx,
                       ++numSanitized;
                   }
               }
-              if(fabs(Bsvd(i,i)) < diagFloor) {
-                  Bsvd(i,i) = (Bsvd(i,i) < 0.0 ? -diagFloor : diagFloor);
-                  ++numSanitized;
-              }
           }
           if(numSanitized > 0) {
               solverLog << "  [sanitized " << numSanitized
-                        << " non-finite/near-singular Jacobian entries before SVD]";
+                        << " non-finite Jacobian entries before SVD]";
           }
 
           // JacobiSVD, not BDCSVD: BDCSVD's divide-and-conquer deflation
