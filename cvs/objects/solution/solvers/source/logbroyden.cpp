@@ -483,7 +483,31 @@ int LogBroyden::bsolve(VecFVec &F, UBVECTOR &x, UBVECTOR &fx,
       if(/*luPartialPiv.determinant() == 0 ||*/ !util::isValidNumber(dxmag)) {
           // singular or badly messed up Jacobian, going to have to use SVD
           solverLog << "Doing SVD, old dxmag:  " << dxmag;
-          Eigen::BDCSVD<UBMATRIX> svdSolver(B, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+          // Sanitize non-finite entries before the SVD solve. Don't floor
+          // near-zero diagonal entries: the threshold-0 pseudoinverse below
+          // already rank-truncates a true zero singular value; flooring it
+          // would make that direction invertible instead of suppressed.
+          UBMATRIX Bsvd(B);
+          int numSanitized = 0;
+          for(int i = 0; i < Bsvd.rows(); ++i) {
+              for(int j = 0; j < Bsvd.cols(); ++j) {
+                  if(!util::isValidNumber(Bsvd(i,j))) {
+                      Bsvd(i,j) = 0.0;
+                      ++numSanitized;
+                  }
+              }
+          }
+          if(numSanitized > 0) {
+              solverLog << "  [sanitized " << numSanitized
+                        << " non-finite Jacobian entries before SVD]";
+          }
+
+          // JacobiSVD, not BDCSVD: BDCSVD's divide-and-conquer deflation
+          // crashes on the singular matrices this fallback exists to handle,
+          // even after sanitizing above. JacobiSVD is slower but robust, and
+          // this path only runs after PartialPivLU has already failed.
+          Eigen::JacobiSVD<UBMATRIX> svdSolver(Bsvd, Eigen::ComputeThinU | Eigen::ComputeThinV);
           // SVD uses a threshold to determine which elements to treat as singular
           // however it is applied relative to the largest diaganol element and we seem
           // to have some really large ones.  So even when setting what seems like a small
