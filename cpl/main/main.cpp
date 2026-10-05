@@ -148,7 +148,7 @@ int main( ) {
     int numHARV = 5;
     int* NUM_HARVEST = &numHARV; // Number of harvest cats in ELM
     int numGEReg = 32;
-    if ( USE_GCAM_USA ) { numGEReg = 82; } // GCAM-USA has larger number of regions
+    if ( USE_GCAM_USA ) { numGEReg = 83; } // GCAM-USA has larger number of regions
     int* NUM_GCAM_ENERGY_REGIONS = &numGEReg;
     int numGLReg = 392;
     int* NUM_GCAM_LAND_REGIONS = &numGLReg;
