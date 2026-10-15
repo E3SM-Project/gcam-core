@@ -50,7 +50,8 @@ public:
     // TODO: Eventually these will need to be vectors of regional emissions instead of global totals
     // void downscaleCO2Emissions(const std::string sector, std::vector<double> aCurrYearRegionEmissVector);
     // Proportion-based method directly from regional to grid
-    void downscaleSurfaceCO2EmissionsFromRegion2Grid(double *aCurrYearEmissions, std::vector<double>& aBaseYearEmissions_sfc, std::vector<double>& aBaseYearEmissionsGrid_sfc, double *scaling_factor);
+    void downscaleSurfaceCO2EmissionsFromRegion2Grid(double *aCurrYearEmissions, std::vector<double>& aBaseYearEmissions_sfc, std::vector<double>& aBaseYearEmissionsGrid_sfc, double *scaling_factor, bool aZeroUnmappedCells=false);
+    bool isGridMapped(int aLon, int aLat) const;
     
     // Convergence-based method
     void calculateCountryBaseYearEmissionData(std::vector<double>& aBaseYearEmissions_sfc, std::vector<double>& aBaseYearEmissionsGrid_sfc);

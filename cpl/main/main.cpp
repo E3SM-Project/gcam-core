@@ -224,6 +224,8 @@ int main( ) {
                 GCAM2ELM_WOODHARVEST_MAPPING_FILE = value;
             } else if ( name == "GCAM2ELM_CDENSITY_MAPPING_FILE" ) {
                 GCAM2ELM_CDENSITY_MAPPING_FILE = value;
+             } else if ( name == "GCAM2ELM_DEGDAYS_MAPPING_FILE" ) {
+                 GCAM2ELM_DEGDAYS_MAPPING_FILE = value;
             } else if ( name == "GCAM2ELM_GLUMAP" ) {
                 GCAM2ELM_GLUMAP = value;
             } else if ( name == "GCAM2ELM_BASELU" ) {
@@ -317,6 +319,10 @@ int main( ) {
             coupleLog.setLevel( ILogger::NOTICE );
             coupleLog << name << " = " << value << endl;
         }
+
+     if (USE_GCAM_USA) {
+         *NUM_GCAM_ENERGY_REGIONS = 83;
+     }
   
     /*
      STEP 3: INITIALIZE INTERFACE AND INTERFACE VARIABLES

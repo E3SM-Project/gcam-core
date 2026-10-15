@@ -1295,19 +1295,35 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
         coupleLog << "GCAM-USA regional level: downscaling" << endl;
         EmissDownscale surfaceCO2_region(*aNumLon, *aNumLat, 12, 1, *aNumReg, *aNumCty, *aNumSector, *aNumPeriod);
         surfaceCO2_region.readRegionMappingData(aRegionMappingFile, aUseGCAMUSA, true);
-        surfaceCO2_region.downscaleSurfaceCO2EmissionsFromRegion2Grid(gcamoemiss_sfc_region, mBaseYearEmissions_sfc_region, mBaseYearEmissionsGrid_sfc, gcamoemiss_sfc_ratio);
+        surfaceCO2_region.downscaleSurfaceCO2EmissionsFromRegion2Grid(gcamoemiss_sfc_region, mBaseYearEmissions_sfc_region, mBaseYearEmissionsGrid_sfc, gcamoemiss_sfc_ratio, true);
 
         coupleLog << "GCAM-USA state level: downscaling" << endl;
         EmissDownscale surfaceCO2_state(*aNumLon, *aNumLat, 12, 1, *aNumReg, *aNumCty, *aNumSector, *aNumPeriod);
         surfaceCO2_state.readRegionMappingData(aRegionMappingFile, aUseGCAMUSA, false);
-        surfaceCO2_state.downscaleSurfaceCO2EmissionsFromRegion2Grid(gcamoemiss_sfc_state, mBaseYearEmissions_sfc_state, mBaseYearEmissionsGrid_sfc, gcamoemiss_sfc_ratio);
+        surfaceCO2_state.downscaleSurfaceCO2EmissionsFromRegion2Grid(gcamoemiss_sfc_state, mBaseYearEmissions_sfc_state, mBaseYearEmissionsGrid_sfc, gcamoemiss_sfc_ratio, true);
 
         coupleLog << "GCAM-USA combined level: downscaling" << endl;
-        // Perform element-wise addition
+        // Perform element-wise addition. Unmapped cells are zero in each split pass, so cells mapped
+        // in neither pass fall back to their base year value (once), matching the single-pass behavior
         int gridPerMonth = (*aNumLat) * (*aNumLon);
-        for (int i = 0; i < gridPerMonth * 12; i++)
+        for (int k = 1; k <= (*aNumLat); k++)
         {
-            surfaceCO2.mCurrYearEmissVector[i] = surfaceCO2_region.mCurrYearEmissVector[i] + surfaceCO2_state.mCurrYearEmissVector[i];
+            for (int j = 1; j <= (*aNumLon); j++)
+            {
+                bool isMapped = surfaceCO2_region.isGridMapped(j, k) || surfaceCO2_state.isGridMapped(j, k);
+                for (int mon = 0; mon < 12; mon++)
+                {
+                    int i = mon * gridPerMonth + (k - 1) * (*aNumLon) + (j - 1);
+                    if (isMapped)
+                    {
+                        surfaceCO2.mCurrYearEmissVector[i] = surfaceCO2_region.mCurrYearEmissVector[i] + surfaceCO2_state.mCurrYearEmissVector[i];
+                    }
+                    else
+                    {
+                        surfaceCO2.mCurrYearEmissVector[i] = mBaseYearEmissionsGrid_sfc[i];
+                    }
+                }
+            }
         }
         surfaceCO2.setValueVector(surfaceCO2.mCurrYearEmissVector);
     }

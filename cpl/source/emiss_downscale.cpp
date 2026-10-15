@@ -1030,14 +1030,20 @@ void EmissDownscale::downscaleSurfaceCO2EmissionsFromCountry2Grid(double *aRegio
 
 
 // Downscale emissions
-void EmissDownscale::downscaleSurfaceCO2EmissionsFromRegion2Grid(double *aCurrYearEmissions, std::vector<double>& aBaseYearEmissions_sfc, std::vector<double>& aBaseYearEmissionsGrid_sfc, double *scaling_factor)
+void EmissDownscale::downscaleSurfaceCO2EmissionsFromRegion2Grid(double *aCurrYearEmissions, std::vector<double>& aBaseYearEmissions_sfc, std::vector<double>& aBaseYearEmissionsGrid_sfc, double *scaling_factor, bool aZeroUnmappedCells)
 { // baseYearEmission need to be updated
 
     // First, set the values that were read in as the BaseYearEmissions
     //mBaseYearEmissVector = getValueVector();
 
     // Calculate current year emissions vector by scaling base year emissions up
-    mCurrYearEmissVector = aBaseYearEmissionsGrid_sfc;
+    // Unmapped grid cells keep their base year value, unless this is one of several split passes
+    // whose results are summed, in which case they are zeroed so they are not counted more than once
+    if (aZeroUnmappedCells) {
+        mCurrYearEmissVector.assign(aBaseYearEmissionsGrid_sfc.size(), 0.0);
+    } else {
+        mCurrYearEmissVector = aBaseYearEmissionsGrid_sfc;
+    }
     int valIndex = 0;    // Index used for PFT x Grid vectors
     double scalar = 0.0; // Define the scalar
     double weight = 0.0; // Define the weight
@@ -1095,6 +1101,12 @@ void EmissDownscale::downscaleSurfaceCO2EmissionsFromRegion2Grid(double *aCurrYe
     return;
 }
 
+// Check whether a grid cell is in the region mapping
+bool EmissDownscale::isGridMapped(int aLon, int aLat) const
+{
+    string gridID = std::to_string(aLon) + "_" + std::to_string(aLat);
+    return mRegionMapping.find(gridID) != mRegionMapping.end();
+}
 
 // Downscale emissions
 void EmissDownscale::downscaleInternationalShipmentCO2Emissions(double *aCurrYearEmissions, double aBaseYearGlobalShipCO2Emiss, std::vector<double>& aBaseYearEmissionsGrid_ship)
