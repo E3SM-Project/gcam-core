@@ -80,7 +80,7 @@ EmissDownscale::~EmissDownscale()
 }
 
 // Read in a regional mapping data from a file
-void EmissDownscale::readRegionMappingData(std::string aFileName)
+void EmissDownscale::readRegionMappingData(std::string aFileName, bool aUseGCAMUSA, bool isRegionalLevel)
 {
     ifstream data(aFileName);
     if (!data.is_open())
@@ -124,6 +124,19 @@ void EmissDownscale::readRegionMappingData(std::string aFileName)
 
         // Create region ID
         string regID = region;
+
+        // filter out regions if running with GCAM-USA and this is not the regional level mapping file
+        if (aUseGCAMUSA) {
+            auto currReg = mRegionIDName.find(regID);
+            if (currReg != mRegionIDName.end()) {
+                if (isRegionalLevel && currReg->second > 32) {
+                    continue;
+                }
+                if (!isRegionalLevel && currReg->second == 1) {
+                    continue;
+                }
+            }
+        }
 
         // Add region ID to the mapping vector.
         // Note that there maybe more than one regID per gridID (hence, a vector)
@@ -1017,14 +1030,20 @@ void EmissDownscale::downscaleSurfaceCO2EmissionsFromCountry2Grid(double *aRegio
 
 
 // Downscale emissions
-void EmissDownscale::downscaleSurfaceCO2EmissionsFromRegion2Grid(double *aCurrYearEmissions, std::vector<double>& aBaseYearEmissions_sfc, std::vector<double>& aBaseYearEmissionsGrid_sfc)
+void EmissDownscale::downscaleSurfaceCO2EmissionsFromRegion2Grid(double *aCurrYearEmissions, std::vector<double>& aBaseYearEmissions_sfc, std::vector<double>& aBaseYearEmissionsGrid_sfc, double *scaling_factor, bool aZeroUnmappedCells)
 { // baseYearEmission need to be updated
 
     // First, set the values that were read in as the BaseYearEmissions
     //mBaseYearEmissVector = getValueVector();
 
     // Calculate current year emissions vector by scaling base year emissions up
-    mCurrYearEmissVector = aBaseYearEmissionsGrid_sfc;
+    // Unmapped grid cells keep their base year value, unless this is one of several split passes
+    // whose results are summed, in which case they are zeroed so they are not counted more than once
+    if (aZeroUnmappedCells) {
+        mCurrYearEmissVector.assign(aBaseYearEmissionsGrid_sfc.size(), 0.0);
+    } else {
+        mCurrYearEmissVector = aBaseYearEmissionsGrid_sfc;
+    }
     int valIndex = 0;    // Index used for PFT x Grid vectors
     double scalar = 0.0; // Define the scalar
     double weight = 0.0; // Define the weight
@@ -1054,8 +1073,11 @@ void EmissDownscale::downscaleSurfaceCO2EmissionsFromRegion2Grid(double *aCurrYe
                     auto currReg = mRegionIDName.find(regID);
                     int regIndex = (*currReg).second - 1;
 
-                    scalar += aCurrYearEmissions[regIndex] / aBaseYearEmissions_sfc[regIndex] * mRegionWeights[std::make_pair(gridID, regID)];
+                    if (aBaseYearEmissions_sfc[regIndex] > 0.0) {
+                    scalar += aCurrYearEmissions[regIndex] / aBaseYearEmissions_sfc[regIndex] * scaling_factor[regIndex] * mRegionWeights[std::make_pair(gridID, regID)];
+                    }
                     weight += mRegionWeights[std::make_pair(gridID, regID)];
+                    
                 }
                 scalar = scalar / weight; // normalized by the total weight 
                 for (int mon = 1; mon <= mNumMon; mon++)
@@ -1079,6 +1101,12 @@ void EmissDownscale::downscaleSurfaceCO2EmissionsFromRegion2Grid(double *aCurrYe
     return;
 }
 
+// Check whether a grid cell is in the region mapping
+bool EmissDownscale::isGridMapped(int aLon, int aLat) const
+{
+    string gridID = std::to_string(aLon) + "_" + std::to_string(aLat);
+    return mRegionMapping.find(gridID) != mRegionMapping.end();
+}
 
 // Downscale emissions
 void EmissDownscale::downscaleInternationalShipmentCO2Emissions(double *aCurrYearEmissions, double aBaseYearGlobalShipCO2Emiss, std::vector<double>& aBaseYearEmissionsGrid_ship)

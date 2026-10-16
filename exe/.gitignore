@@ -12,3 +12,10 @@ Release*
 gas*.emk
 outFile*.csv
 debug*.xml
+cell_area*.csv
+gcam_co2*.csv
+hr*.csv
+npp*.csv
+scal*.csv
+pft*.csv
+restart.*
