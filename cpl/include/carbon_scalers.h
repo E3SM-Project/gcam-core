@@ -60,7 +60,7 @@ public:
     void writeScalers(std::string aFileName, std::vector<int>& aYears, std::vector<std::string>& aRegions, std::vector<std::string>& aLandTechs,
                       std::vector<double>& aAboveScalers, std::vector<double>& aBelowScalers, int aLength);
     void readBaseYearData(std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName);
-    void readRegionalMappingData(std::string aFileName);
+    void readRegionalMappingData(std::string aFileName, bool aUseGCAMUSA);
     void excludeOutliers(double *aELMNPP, double *aELMHR);
 private:
     // Data for calculating the scalar baseline

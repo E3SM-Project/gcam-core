@@ -38,16 +38,17 @@ public:
                   const bool aReadHDDCDD, const bool aWriteHDDCDD,
                  bool aScaleAgYield, bool aScaleCarbon, bool aScaleHDDCDD,
                  std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName,
-                 std::string aBaseHDDFileName, std::string aBaseCDDFileName, bool aRestartRun);
+                 std::string aBaseHDDFileName, std::string aBaseCDDFileName, bool aRestartRun, bool aUseGCAMUSA);
 
     void setLandProductivityScalingGCAM(int *yyyymmdd, double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
                         int *aNumLon, int *aNumLat, int *aNumPFT, std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars, std::string aScalarSourceDir,
-                        bool aWriteScalars, bool aScaleAgYield, bool aScaleCarbon, std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName);
+                        bool aWriteScalars, bool aScaleAgYield, bool aScaleCarbon, std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName,
+                        bool aUseGCAMUSA);
 
     void setDegreeDaysGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD, const double *const aELMCDD,
                            const double *const aPopDensity, const double *const aELMLandFrac, const int *aNumLon, const int *aNumLat,
                            const std::string &aMappingFile, const bool aReadHDDCDD, std::string aScalarSourceDir, const bool aWriteHDDCDD, bool aScaleHDDCDD,
-                           const std::string &aBaseHDDFileName, const std::string &aBaseCDDFileName);
+                           const std::string &aBaseHDDFileName, const std::string &aBaseCDDFileName, const bool aUseGCAMUSA);
 
     void downscaleEmissionsGCAM(double *gcamoemiss,
                                 double *gcamoco2sfcjan, double *gcamoco2sfcfeb, double *gcamoco2sfcmar, double *gcamoco2sfcapr,

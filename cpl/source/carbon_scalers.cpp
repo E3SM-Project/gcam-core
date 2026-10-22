@@ -86,7 +86,7 @@ void CarbonScalers::readBaseYearData(std::string aBaseNPPFileName, std::string a
 }
 
 // Read in a regional mapping data from a file
-void CarbonScalers::readRegionalMappingData(std::string aFileName) {
+void CarbonScalers::readRegionalMappingData(std::string aFileName, bool aUseGCAMUSA) {
     ifstream data(aFileName);
     if (!data.is_open())
     {
@@ -99,15 +99,25 @@ void CarbonScalers::readRegionalMappingData(std::string aFileName) {
         istringstream iss(str);
         string token;
         double value;
+        int regionIndex;
         int lon;
         int lat;
         string region;
         string subregion;
-            
-        // Skip region & GLU ID
+
+        // Parse region index
         getline(iss, token, ',');
+        regionIndex = std::stoi(token);
+
+        // The GCAM-USA mapping file has state rows (region index > 32) in addition to the USA rows.
+        // Land is not modeled by state in GCAM-USA, so skip the state rows
+        if (aUseGCAMUSA && regionIndex > 32) {
+            continue;
+        }
+
+        // Skip GLU ID
         getline(iss, token, ',');
-        
+
         // Parse longitude
         getline(iss, token, ',');
         lon = std::stoi(token);
@@ -130,7 +140,12 @@ void CarbonScalers::readRegionalMappingData(std::string aFileName) {
 
         // Create reion ID
         string regID = region + "." + subregion;
-        
+
+        // The GCAM-USA mapping file also repeats the non-USA rows after the regional rows, so skip rows that were already read
+        if (aUseGCAMUSA && mRegionWeights.find(std::make_pair(gridID, regID)) != mRegionWeights.end()) {
+            continue;
+        }
+
         // Add region ID to the mapping vector.
         // Note that there maybe more than one regID per gridID (hence, a vector)
         if ( mRegionMapping.find(gridID) == mRegionMapping.end() ) {

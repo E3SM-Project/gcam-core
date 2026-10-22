@@ -431,7 +431,7 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
                                    std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars,  std::string aScalarSourceDir,
                                    bool aWriteScalars, bool aReadHDDCDD, bool aWriteHDDCDD, bool aScaleAgYield, bool aScaleCarbon, bool aScaleHDDCDD,
                                    std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName,
-                                   std::string aBaseHDDFileName, std::string aBaseCDDFileName, bool aRestartRun )
+                                   std::string aBaseHDDFileName, std::string aBaseCDDFileName, bool aRestartRun, bool aUseGCAMUSA )
 {
     int z, p, i, num_it, spinup;
     int row, lurow, r, l;
@@ -542,11 +542,13 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
             if( e3smYear >=  *aFirstCoupledYear ) {
                setLandProductivityScalingGCAM(yyyymmdd, aELMArea, aELMPFTFract, aELMNPP, aELMHR,
                             aNumLon, aNumLat, aNumPFT, aMappingFile, aFirstCoupledYear, aReadScalars, aScalarSourceDir,
-                            aWriteScalars, aScaleAgYield, aScaleCarbon, aBaseNPPFileName, aBaseHRFileName, aBasePFTWtFileName);
-                
+                            aWriteScalars, aScaleAgYield, aScaleCarbon, aBaseNPPFileName, aBaseHRFileName, aBasePFTWtFileName,
+                            aUseGCAMUSA);
+
 
                 setDegreeDaysGCAM(gcamYear, aELMArea, aELMHDD, aELMCDD, aPopDensity, aELMLandFrac, aNumLon, aNumLat,
-                    aMappingFile, aReadHDDCDD, aScalarSourceDir, aWriteHDDCDD, aScaleHDDCDD, aBaseHDDFileName, aBaseCDDFileName);
+                    aMappingFile, aReadHDDCDD, aScalarSourceDir, aWriteHDDCDD, aScaleHDDCDD, aBaseHDDFileName, aBaseCDDFileName,
+                    aUseGCAMUSA);
             }
 
             // now run the current period
@@ -746,7 +748,8 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
 void GCAM_E3SM_interface::setLandProductivityScalingGCAM(int *yyyymmdd, double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
                                          int *aNumLon, int *aNumLat, int *aNumPFT, std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars,
                                          std::string aScalarSourceDir, bool aWriteScalars, bool aScaleAgYield, bool aScaleCarbon,
-                                         std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName) {
+                                         std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName,
+                                         bool aUseGCAMUSA) {
     // Get year only of the current date
     // Note that GCAM runs one period ahead of E3SM. We make that adjustment here
     const Modeltime* modeltime = runner->getInternalScenario()->getModeltime();
@@ -803,7 +806,7 @@ void GCAM_E3SM_interface::setLandProductivityScalingGCAM(int *yyyymmdd, double *
             numScalars = e3sm2gcam.readScalers(fName, scalarYears, scalarRegion, scalarLandTech, aboveScalarData, belowScalarData);
         } else {
             coupleLog << "In setLandProductivityScalingGCAM, Reading grid mapping file" << endl;
-            e3sm2gcam.readRegionalMappingData(aMappingFile);
+            e3sm2gcam.readRegionalMappingData(aMappingFile, aUseGCAMUSA);
             coupleLog << "In setLandProductivityScalingGCAM, Calculating scalars from data." << endl;
             e3sm2gcam.calcScalers(gcamYear, aELMArea, aELMPFTFract, aELMNPP, aELMHR,
                                   scalarYears, scalarRegion, scalarLandTech, aboveScalarData, belowScalarData,
@@ -976,12 +979,13 @@ void GCAM_E3SM_interface::setLandProductivityScalingGCAM(int *yyyymmdd, double *
  * \param aScaleHDDCDD If true, apply scaling based on baseline comparison
  * \param aBaseHDDFileName Path to baseline degree days CSV file (required if aScaleHDDCDD is true)
  * \param aBaseCDDFileName Path to baseline degree days CSV file (required if aScaleHDDCDD is true)
- * 
+ * \param aUseGCAMUSA If true, skip GCAM-USA state rows in the regional mapping file
+ *
  */
 void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD,
-    const double *const aELMCDD, const double *const aPopDensity, const double *const aELMLandFrac, const int *aNumLon, 
+    const double *const aELMCDD, const double *const aPopDensity, const double *const aELMLandFrac, const int *aNumLon,
     const int *aNumLat, const std::string &aMappingFile, const bool aReadHDDCDD, std::string aScalarSourceDir, const bool aWriteHDDCDD, bool aScaleHDDCDD,
-    const std::string &aBaseHDDFileName, const std::string &aBaseCDDFileName)
+    const std::string &aBaseHDDFileName, const std::string &aBaseCDDFileName, const bool aUseGCAMUSA)
 {
     ILogger& coupleLog = ILogger::getLogger("coupling_log");
     coupleLog.setLevel(ILogger::NOTICE);
@@ -999,7 +1003,7 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
     DegreeDays degreeDays(*aNumLon, *aNumLat, false);
     
     // Read regional mapping (needed for both read and calculate paths)
-    degreeDays.readRegionalMappingData(aMappingFile);
+    degreeDays.readRegionalMappingData(aMappingFile, aUseGCAMUSA);
     coupleLog << "Finished reading regional mapping data for degree days" << std::endl;
     
     // Process heating/cooling degree days. TODO: Consider taking file name as an argument, rather than hard coding
