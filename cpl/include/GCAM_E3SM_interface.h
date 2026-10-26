@@ -48,7 +48,7 @@ public:
     void setDegreeDaysGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD, const double *const aELMCDD,
                            const double *const aPopDensity, const double *const aELMLandFrac, const int *aNumLon, const int *aNumLat,
                            const std::string &aMappingFile, const bool aReadHDDCDD, std::string aScalarSourceDir, const bool aWriteHDDCDD, bool aScaleHDDCDD,
-                           const std::string &aBaseHDDFileName, const std::string &aBaseCDDFileName, const bool aUseGCAMUSA);
+                           const std::string &aBaseHDDFileName, const std::string &aBaseCDDFileName);
 
     void downscaleEmissionsGCAM(double *gcamoemiss,
                                 double *gcamoco2sfcjan, double *gcamoco2sfcfeb, double *gcamoco2sfcmar, double *gcamoco2sfcapr,

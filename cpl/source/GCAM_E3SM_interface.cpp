@@ -547,8 +547,7 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
 
 
                 setDegreeDaysGCAM(gcamYear, aELMArea, aELMHDD, aELMCDD, aPopDensity, aELMLandFrac, aNumLon, aNumLat,
-                    aMappingFile, aReadHDDCDD, aScalarSourceDir, aWriteHDDCDD, aScaleHDDCDD, aBaseHDDFileName, aBaseCDDFileName,
-                    aUseGCAMUSA);
+                    aMappingFile, aReadHDDCDD, aScalarSourceDir, aWriteHDDCDD, aScaleHDDCDD, aBaseHDDFileName, aBaseCDDFileName);
             }
 
             // now run the current period
@@ -979,13 +978,16 @@ void GCAM_E3SM_interface::setLandProductivityScalingGCAM(int *yyyymmdd, double *
  * \param aScaleHDDCDD If true, apply scaling based on baseline comparison
  * \param aBaseHDDFileName Path to baseline degree days CSV file (required if aScaleHDDCDD is true)
  * \param aBaseCDDFileName Path to baseline degree days CSV file (required if aScaleHDDCDD is true)
- * \param aUseGCAMUSA If true, skip GCAM-USA state rows in the regional mapping file
+ *
+ * With GCAM-USA, the mapping file has both the 32 GCAM regions and the 51 states, and all rows are read.
+ * Buildings in GCAM-USA are modeled by state, so the states get their own degree days. The USA region
+ * also gets a value, but its GCAM degree days are zero, so it is unaffected.
  *
  */
 void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD,
     const double *const aELMCDD, const double *const aPopDensity, const double *const aELMLandFrac, const int *aNumLon,
     const int *aNumLat, const std::string &aMappingFile, const bool aReadHDDCDD, std::string aScalarSourceDir, const bool aWriteHDDCDD, bool aScaleHDDCDD,
-    const std::string &aBaseHDDFileName, const std::string &aBaseCDDFileName, const bool aUseGCAMUSA)
+    const std::string &aBaseHDDFileName, const std::string &aBaseCDDFileName)
 {
     ILogger& coupleLog = ILogger::getLogger("coupling_log");
     coupleLog.setLevel(ILogger::NOTICE);
@@ -1003,7 +1005,7 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
     DegreeDays degreeDays(*aNumLon, *aNumLat, false);
     
     // Read regional mapping (needed for both read and calculate paths)
-    degreeDays.readRegionalMappingData(aMappingFile, aUseGCAMUSA);
+    degreeDays.readRegionalMappingData(aMappingFile);
     coupleLog << "Finished reading regional mapping data for degree days" << std::endl;
     
     // Process heating/cooling degree days. TODO: Consider taking file name as an argument, rather than hard coding

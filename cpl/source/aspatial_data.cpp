@@ -343,12 +343,11 @@ void ASpatialData::writeSpatialData(std::string aFileName, bool aWriteID) {
  * weights indicating what portion of the cell belongs to each region.
  * 
  * \param aFileName Path to the regional mapping CSV file
- * \param aUseGCAMUSA If true, skip rows for GCAM-USA states (region ID > 32) so that only the 32 GCAM regions are read
- *
+ * 
  * \details
  * **CSV File Format:**
  * The input file must be a comma-separated file with a header row (skipped) and the following columns:
- * - Column 1: Region ID (used only to skip GCAM-USA state rows)
+ * - Column 1: Region ID (skipped)
  * - Column 2: GLU ID (skipped)
  * - Column 3: Longitude index (integer)
  * - Column 4: Latitude index (integer)
@@ -379,7 +378,7 @@ void ASpatialData::writeSpatialData(std::string aFileName, bool aWriteID) {
  */
 // TODO: Modify all subclasses of ASpatialData (e.g., CarbonScalers, EmissDownscale, DegreeDays) to use this 
 // method to read in the regional mapping data
-void ASpatialData::readRegionalMappingData(const std::string &aFileName, const bool aUseGCAMUSA)
+void ASpatialData::readRegionalMappingData(const std::string &aFileName) 
 {
     // Open the file and check that it opened successfully
     std::ifstream data(aFileName);
@@ -389,7 +388,7 @@ void ASpatialData::readRegionalMappingData(const std::string &aFileName, const b
     }
     std::string line;
     // Skip the first line (i.e., the header)
-    std::getline(data, line);
+    std::getline(data, line); 
 
     // Read each line of the file one by one
     while (std::getline(data, line))
@@ -401,19 +400,9 @@ void ASpatialData::readRegionalMappingData(const std::string &aFileName, const b
         std::string region;
         std::string subregion;
         double weight;
-
-        // Parse region index
+            
+        // Skip region & GLU ID
         std::getline(iss, token, ',');
-        const int regionIndex = std::stoi(token);
-
-        // The GCAM-USA mapping file has state rows (region index > 32) in addition to the USA rows.
-        // Skip the state rows so that grid cells map only to the 32 GCAM regions
-        if (aUseGCAMUSA && regionIndex > 32)
-        {
-            continue;
-        }
-
-        // Skip GLU ID
         std::getline(iss, token, ',');
         
         // Parse longitude
