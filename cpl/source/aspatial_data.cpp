@@ -41,7 +41,6 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-#include <set>
 
 #include "util/base/include/auto_file.h"
 #include "../include/aspatial_data.h"
@@ -344,7 +343,7 @@ void ASpatialData::writeSpatialData(std::string aFileName, bool aWriteID) {
  * weights indicating what portion of the cell belongs to each region.
  * 
  * \param aFileName Path to the regional mapping CSV file
- * \param aUseGCAMUSA If true, skip rows for GCAM-USA states (region ID > 32) and repeated rows so that only the 32 GCAM regions are read
+ * \param aUseGCAMUSA If true, skip rows for GCAM-USA states (region ID > 32) so that only the 32 GCAM regions are read
  *
  * \details
  * **CSV File Format:**
@@ -392,9 +391,6 @@ void ASpatialData::readRegionalMappingData(const std::string &aFileName, const b
     // Skip the first line (i.e., the header)
     std::getline(data, line);
 
-    // Rows (grid cell, region, subregion) already read, used to skip repeated rows in the GCAM-USA mapping file
-    std::set<std::string> readRows;
-
     // Read each line of the file one by one
     while (std::getline(data, line))
     {
@@ -436,22 +432,16 @@ void ASpatialData::readRegionalMappingData(const std::string &aFileName, const b
         region = token;
         // Remove quotes from region name, if they exist. TODO: Also remove spaces?
         region.erase( remove( region.begin(), region.end(), '\"' ), region.end() );
-
-        // Parse Subregion ID
-        std::getline(iss, token, ',');
-        subregion = token;
-        // Remove quotes from subregion name, if they exist. TODO: Also remove spaces?
-        subregion.erase( remove( subregion.begin(), subregion.end(), '\"' ), subregion.end() );
-
-        // The GCAM-USA mapping file also repeats the non-USA rows after the regional rows, so skip rows that were already read
-        if (aUseGCAMUSA && !readRows.insert(gridID + "," + region + "," + subregion).second)
-        {
-            continue;
-        }
-
+        
         std::string regID;
         if (mReadSubregions)
         {
+            // Parse Subregion ID
+            std::getline(iss, token, ',');
+            subregion = token;
+            // Remove quotes from subregion name, if they exist. TODO: Also remove spaces?
+            subregion.erase( remove( subregion.begin(), subregion.end(), '\"' ), subregion.end() );
+
             // Example region ID: "USA.Mississippi", where "USA" is the region and "Mississippi" is the subregion (e.g., basin, state, or other sub-regional unit)
             regID = region + "." + subregion;
 
@@ -469,7 +459,8 @@ void ASpatialData::readRegionalMappingData(const std::string &aFileName, const b
         }
         else
         {
-            // If not reading subregions, then the region ID is just the main region (e.g., "USA")
+            // If not reading subregions, then skip reading subregions so that the region ID is just the main region (e.g., "USA")
+            std::getline(iss, token, ',');
             regID = region;
 
             // Parse weight -- this is the fraction of the grid cell in a particular GCAM region

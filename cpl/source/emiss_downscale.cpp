@@ -39,7 +39,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <set>
 
 #include "util/base/include/auto_file.h"
 #include "../include/emiss_downscale.h"
@@ -90,10 +89,6 @@ void EmissDownscale::readRegionMappingData(std::string aFileName, bool aUseGCAMU
     }
     string str;
     getline(data, str); // skip the first line
-
-    // Rows (grid cell, region, subregion) already read, used to skip repeated rows in the GCAM-USA mapping file
-    std::set<std::string> readRows;
-
     while (getline(data, str))
     {
         istringstream iss(str);
@@ -124,20 +119,14 @@ void EmissDownscale::readRegionMappingData(std::string aFileName, bool aUseGCAMU
         region.erase(remove(region.begin(), region.end(), '\"'), region.end());
         region.erase(remove(region.begin(), region.end(), ' '), region.end()); // remove spaces in the region names
 
-        // Parse SubRegion Name
+        // Skip SubRegion Name
         getline(iss, token, ',');
-        subregion = token;
 
         // Create region ID
         string regID = region;
 
         // filter out regions if running with GCAM-USA and this is not the regional level mapping file
         if (aUseGCAMUSA) {
-            // The GCAM-USA mapping file repeats the non-USA rows in its state level block, so skip rows that were already read
-            if (!readRows.insert(gridID + "," + regID + "," + subregion).second) {
-                continue;
-            }
-
             auto currReg = mRegionIDName.find(regID);
             if (currReg != mRegionIDName.end()) {
                 if (isRegionalLevel && currReg->second > 32) {

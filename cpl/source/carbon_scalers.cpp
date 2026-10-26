@@ -140,12 +140,7 @@ void CarbonScalers::readRegionalMappingData(std::string aFileName, bool aUseGCAM
 
         // Create reion ID
         string regID = region + "." + subregion;
-
-        // The GCAM-USA mapping file also repeats the non-USA rows after the regional rows, so skip rows that were already read
-        if (aUseGCAMUSA && mRegionWeights.find(std::make_pair(gridID, regID)) != mRegionWeights.end()) {
-            continue;
-        }
-
+        
         // Add region ID to the mapping vector.
         // Note that there maybe more than one regID per gridID (hence, a vector)
         if ( mRegionMapping.find(gridID) == mRegionMapping.end() ) {
