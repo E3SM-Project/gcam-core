@@ -76,7 +76,6 @@ public:
                                                               double *gcamoco2airhijul, double *gcamoco2airhiaug, double *gcamoco2airhisep,
                                                               double *gcamoco2airhioct, double *gcamoco2airhinov, double *gcamoco2airhidec,
                                                               int aNumLon, int aNumLat);
-    void readRegionMappingData(std::string aFileName, bool aUseGCAMUSA=false, bool isRegionalLevel=true);
     void readRegionBaseYearEmissionData(std::string aFileName);
     void readCountryMappingData(std::string aFileName);
     void readCountry2RegionMappingData(std::string aFileName);
@@ -124,18 +123,13 @@ private:
     std::vector<std::vector<double>> mGDPRegionGCAM;
     std::vector<std::vector<double>> mSfcCO2RegionGCAM;
     
-    // Map grid cells to regions. Key is a string with longitude and latitude ("lon_lat").
-    // Key maps to a vector of strings containing the region
-    // Note that this map will be longer than lat * lon since some grid cells map to multiple regions
-    std::map<std::string, std::vector<std::string>> mRegionMapping;
+    // Map grid cells to countries. Key is a string with longitude and latitude ("lon_lat").
     std::map<std::string, std::vector<std::string>> mCountryMapping;
     std::map<std::string, std::string> mCountry2RegionNameMapping;
     std::map<int, int> mCountry2RegionIDMapping;
 
-    // Map region weights (these indicate the fraction of a grid cell assigned to each region)
-    // Key is a pair indicating the grid cell and the region/subregion
-    // Key maps to a double representing the fraction of the grid cell in that region/subregion
-    std::map<std::pair<std::string,std::string>, double> mRegionWeights;
+    // Map country weights (these indicate the fraction of a grid cell assigned to each country)
+    // Key is a pair indicating the grid cell and the country
     std::map<std::pair<std::string,std::string>, double> mCountryWeights;
     
     std::map<std::string, int> mRegionIDName{

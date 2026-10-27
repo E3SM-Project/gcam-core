@@ -47,7 +47,8 @@ public:
     ASpatialData(const int aSize, const bool aReadSubregions);
     ~ASpatialData();
     virtual void readMapping(std::string aFileName);
-    virtual void readRegionalMappingData(const std::string &aFileName);
+    virtual void readRegionalMappingData(const std::string &aFileName, const bool aSkipStateRows = false,
+                                         const bool aSkipUSARows = false, const bool aRemoveSpaces = false);
     virtual double readSpatialData(std::string aFileName, bool aHasLatLon, bool aHasID, bool aCalcTotal);
     virtual double readSpatialData(std::string aFileName, bool aHasLatLon, bool aHasID, bool aCalcTotal, double *aValueArray);
     virtual double readSpatialDataCSV(std::string aFileName, bool aHasLatLon, bool aHasID, bool aCalcTotal);

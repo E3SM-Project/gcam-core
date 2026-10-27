@@ -1265,7 +1265,8 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
         if (aCO2DownscalingMethod == "Convergence")
         {
             coupleLog << "Start Convergence-based downscaling" << endl;
-            surfaceCO2.readRegionMappingData(aRegionMappingFile);
+            // Region names without spaces, to match the EmissDownscale region IDs
+            surfaceCO2.readRegionalMappingData(aRegionMappingFile, false, false, true);
             coupleLog << "Finish read regional mapping data" << aRegionMappingFile << endl;
         
             coupleLog << "Start readCountryMappingData:" << aCountryMappingFile << endl;
@@ -1287,7 +1288,8 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
         }
         else
         {
-            surfaceCO2.readRegionMappingData(aRegionMappingFile);
+            // Region names without spaces, to match the EmissDownscale region IDs
+            surfaceCO2.readRegionalMappingData(aRegionMappingFile, false, false, true);
             coupleLog << "Finish read regional mapping data and start surface downscaling" << endl;
         
             //surfaceCO2.readRegionBaseYearEmissionData(aBaseCO2GcamFileName);
@@ -1300,12 +1302,14 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
     {
         coupleLog << "GCAM-USA regional level: downscaling" << endl;
         EmissDownscale surfaceCO2_region(*aNumLon, *aNumLat, 12, 1, *aNumReg, *aNumCty, *aNumSector, *aNumPeriod);
-        surfaceCO2_region.readRegionMappingData(aRegionMappingFile, aUseGCAMUSA, true);
+        // Regional level: skip the state rows; region names without spaces, to match the EmissDownscale region IDs
+        surfaceCO2_region.readRegionalMappingData(aRegionMappingFile, true, false, true);
         surfaceCO2_region.downscaleSurfaceCO2EmissionsFromRegion2Grid(gcamoemiss_sfc_region, mBaseYearEmissions_sfc_region, mBaseYearEmissionsGrid_sfc, gcamoemiss_sfc_ratio, true);
 
         coupleLog << "GCAM-USA state level: downscaling" << endl;
         EmissDownscale surfaceCO2_state(*aNumLon, *aNumLat, 12, 1, *aNumReg, *aNumCty, *aNumSector, *aNumPeriod);
-        surfaceCO2_state.readRegionMappingData(aRegionMappingFile, aUseGCAMUSA, false);
+        // State level: skip the USA rows (the states replace USA); region names without spaces, to match the EmissDownscale region IDs
+        surfaceCO2_state.readRegionalMappingData(aRegionMappingFile, false, true, true);
         surfaceCO2_state.downscaleSurfaceCO2EmissionsFromRegion2Grid(gcamoemiss_sfc_state, mBaseYearEmissions_sfc_state, mBaseYearEmissionsGrid_sfc, gcamoemiss_sfc_ratio, true);
 
         coupleLog << "GCAM-USA combined level: downscaling" << endl;
@@ -1364,8 +1368,6 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
     // this read should not have worked because the ASpatialData constructor is not called to allocate the vectors and the access uses []
     //shipmentCO2.readSpatialData(aBaseCO2ShipFile, true, true, false);
     //coupleLog << "Finish read spatial data" << endl;
-    shipmentCO2.readRegionMappingData(aRegionMappingFile);
-    coupleLog << "Finish read regional mapping data" << endl;
     //shipmentCO2.readRegionBaseYearEmissionData(aBaseCO2GcamFileName);
     coupleLog << "start shipment downscaling" << endl;
     shipmentCO2.downscaleInternationalShipmentCO2Emissions(gcamoemiss_ship, mBaseYearGlobalShipCO2Emiss, mBaseYearEmissionsGrid_ship);
@@ -1397,7 +1399,6 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
     EmissDownscale aircraftCO2(*aNumLon, *aNumLat, 12, 2, *aNumReg, *aNumCty, *aNumSector, *aNumPeriod);
     // this read should not have worked because the ASpatialData constructor is not called to allocate the vectors and the access uses []
     //aircraftCO2.readSpatialData(aBaseCO2AirFile, true, true, false);
-    aircraftCO2.readRegionMappingData(aRegionMappingFile);
     //aircraftCO2.readRegionBaseYearEmissionData(aBaseCO2GcamFileName);
     coupleLog << "start aircraft downscaling" << endl;
     aircraftCO2.downscaleAircraftCO2Emissions(gcamoemiss_air, mBaseYearGlobalAirCO2Emiss, mBaseYearEmissionsGrid_air);
