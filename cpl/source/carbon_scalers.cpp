@@ -51,7 +51,7 @@ using namespace std;
 // Constructor
 // TODO: I don't think this needs to be a derived class anymore.
 CarbonScalers::CarbonScalers(int aNumLon, int aNumLat, int aNumPFT):
-ASpatialData( aNumLat * aNumLon * aNumPFT ),
+ASpatialData( aNumLat * aNumLon * aNumPFT, true ),
 mBaseNPPVector( aNumLat * aNumLon * aNumPFT, 0),
 mBaseHRVector( aNumLat * aNumLon * aNumPFT, 0),
 mBasePFTFractVector( aNumLat * aNumLon * aNumPFT, 0),
@@ -83,75 +83,6 @@ void CarbonScalers::readBaseYearData(std::string aBaseNPPFileName, std::string a
     // Read in PFT weight in grid cell
     readSpatialDataCSV(aBasePFTWtFileName, true, true, false);
     mBasePFTFractVector = getValueVector();
-}
-
-// Read in a regional mapping data from a file
-void CarbonScalers::readRegionalMappingData(std::string aFileName) {
-    ifstream data(aFileName);
-    if (!data.is_open())
-    {
-        exit(EXIT_FAILURE);
-    }
-    string str;
-    getline(data, str); // skip the first line
-    while (getline(data, str))
-    {
-        istringstream iss(str);
-        string token;
-        double value;
-        int lon;
-        int lat;
-        string region;
-        string subregion;
-            
-        // Skip region & GLU ID
-        getline(iss, token, ',');
-        getline(iss, token, ',');
-        
-        // Parse longitude
-        getline(iss, token, ',');
-        lon = std::stoi(token);
-        
-        // Parse latitude
-        getline(iss, token, ',');
-        lat = std::stoi(token);
-        
-        string gridID = std::to_string(lon) + "_" + std::to_string(lat);
-        
-        // Parse Region ID
-        getline(iss, token, ',');
-        region = token;
-        region.erase( remove( region.begin(), region.end(), '\"' ), region.end() );
-        
-        // Parse SubRegion ID
-        getline(iss, token, ',');
-        subregion = token;
-        subregion.erase( remove( subregion.begin(), subregion.end(), '\"' ), subregion.end() );
-
-        // Create reion ID
-        string regID = region + "." + subregion;
-        
-        // Add region ID to the mapping vector.
-        // Note that there maybe more than one regID per gridID (hence, a vector)
-        if ( mRegionMapping.find(gridID) == mRegionMapping.end() ) {
-            // If gridID is not found, then add it with this regID in its vector
-            vector<string> temp;
-            temp.push_back(regID);
-            mRegionMapping[gridID] = temp;
-        } else {
-            // If gridID is found, then add to the existing regID vector
-            auto currGrid = mRegionMapping.find( gridID );
-            (*currGrid).second.push_back(regID);
-        }
-        
-        // Parse Weight -- this is the fraction of the grid cell in a particular GCAM region
-        getline(iss, token, ',');
-        value = std::stod(token);
-        
-        mRegionWeights[std::make_pair(gridID,regID)] = value;
-    }
-    
-    return;
 }
 
 // Calculate scalers

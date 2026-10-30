@@ -60,7 +60,6 @@ public:
     void writeScalers(std::string aFileName, std::vector<int>& aYears, std::vector<std::string>& aRegions, std::vector<std::string>& aLandTechs,
                       std::vector<double>& aAboveScalers, std::vector<double>& aBelowScalers, int aLength);
     void readBaseYearData(std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName);
-    void readRegionalMappingData(std::string aFileName);
     void excludeOutliers(double *aELMNPP, double *aELMHR);
 private:
     // Data for calculating the scalar baseline
@@ -75,16 +74,6 @@ private:
 
     // the cell area associated with each pft in each cell; memory dealt with on construction and destruction
     double *mELMArea;
-    
-    // Map grid cells to regions. Key is a string with longitude and latitude ("lon_lat").
-    // Key maps to a vector of strings containing the region and subregion
-    // Note that this map will be longer than lat * lon since some grid cells map to multiple regions
-    std::map<std::string, std::vector<std::string>> mRegionMapping;
-    
-    // Map region weights (these indicate the fraction of a grid cell assigned to each region)
-    // Key is a pair indicating the grid cell and the region/subregion
-    // Key maps to a double representing the fraction of the grid cell in that region/subregion
-    std::map<std::pair<std::string,std::string>, double> mRegionWeights;
     
     //! Map PFTs to GCAM crops
     // These are matched for pft relationship over location; for example, several crop area types are in forest or c4 grass rather than cropland
