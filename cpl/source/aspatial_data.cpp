@@ -343,8 +343,8 @@ void ASpatialData::writeSpatialData(std::string aFileName, bool aWriteID) {
  * weights indicating what portion of the cell belongs to each region.
  * 
  * \param aFileName Path to the regional mapping CSV file
- * \param aSkipStateRows If true, skip GCAM-USA state rows (region ID > 32) so that only the 32 GCAM regions are read
- * \param aSkipUSARows If true, skip rows for the USA region (e.g., the GCAM-USA state level emissions pass, where the states replace USA)
+ * \param aUSAMapping USAMapping::Region to read USA as one GCAM region (skip the GCAM-USA state rows, region ID > 32),
+ *        or USAMapping::States to read USA as the 51 GCAM-USA states (skip the USA rows)
  * \param aRemoveSpaces If true, remove spaces from region names
  *
  * \details
@@ -379,8 +379,7 @@ void ASpatialData::writeSpatialData(std::string aFileName, bool aWriteID) {
  *    - Weights for a single grid cell across all regions should sum to 1.0
  * 
  */
-void ASpatialData::readRegionalMappingData(const std::string &aFileName, const bool aSkipStateRows,
-                                           const bool aSkipUSARows, const bool aRemoveSpaces)
+void ASpatialData::readRegionalMappingData(const std::string &aFileName, const USAMapping aUSAMapping, const bool aRemoveSpaces)
 {
     // Open the file and check that it opened successfully
     std::ifstream data(aFileName);
@@ -409,8 +408,8 @@ void ASpatialData::readRegionalMappingData(const std::string &aFileName, const b
         regionIndex = std::stoi(token);
 
         // The GCAM-USA mapping file has state rows (region ID > 32) in addition to the 32 GCAM regions.
-        // Skip the state rows if requested (e.g., land, which is not modeled by state in GCAM-USA)
-        if (aSkipStateRows && regionIndex > 32)
+        // Skip the state rows when USA is read as one region
+        if (aUSAMapping == USAMapping::Region && regionIndex > 32)
         {
             continue;
         }
@@ -439,8 +438,8 @@ void ASpatialData::readRegionalMappingData(const std::string &aFileName, const b
             region.erase( remove( region.begin(), region.end(), ' ' ), region.end() );
         }
 
-        // Skip the USA rows if requested
-        if (aSkipUSARows && region == "USA")
+        // Skip the USA rows when USA is read as the states, which cover the same grid cells
+        if (aUSAMapping == USAMapping::States && region == "USA")
         {
             continue;
         }

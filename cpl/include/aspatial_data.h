@@ -41,14 +41,18 @@
 #include <list>
 #include <vector>
 
+enum class USAMapping {
+    Region, // USA as one GCAM region: skip the state rows
+    States  // USA as the 51 GCAM-USA states: skip the USA rows
+};
+
 class ASpatialData {
 public:
     ASpatialData(int aSize);
     ASpatialData(const int aSize, const bool aReadSubregions);
     ~ASpatialData();
     virtual void readMapping(std::string aFileName);
-    virtual void readRegionalMappingData(const std::string &aFileName, const bool aSkipStateRows = false,
-                                         const bool aSkipUSARows = false, const bool aRemoveSpaces = false);
+    virtual void readRegionalMappingData(const std::string &aFileName, const USAMapping aUSAMapping, const bool aRemoveSpaces);
     virtual double readSpatialData(std::string aFileName, bool aHasLatLon, bool aHasID, bool aCalcTotal);
     virtual double readSpatialData(std::string aFileName, bool aHasLatLon, bool aHasID, bool aCalcTotal, double *aValueArray);
     virtual double readSpatialDataCSV(std::string aFileName, bool aHasLatLon, bool aHasID, bool aCalcTotal);
