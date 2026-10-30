@@ -542,12 +542,12 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
             if( e3smYear >=  *aFirstCoupledYear ) {
                setLandProductivityScalingGCAM(yyyymmdd, aELMArea, aELMPFTFract, aELMNPP, aELMHR,
                             aNumLon, aNumLat, aNumPFT, aMappingFile, aFirstCoupledYear, aReadScalars, aScalarSourceDir,
-                            aWriteScalars, aScaleAgYield, aScaleCarbon, aBaseNPPFileName, aBaseHRFileName, aBasePFTWtFileName,
-                            aUseGCAMUSA);
+                            aWriteScalars, aScaleAgYield, aScaleCarbon, aBaseNPPFileName, aBaseHRFileName, aBasePFTWtFileName);
 
 
                 setDegreeDaysGCAM(gcamYear, aELMArea, aELMHDD, aELMCDD, aPopDensity, aELMLandFrac, aNumLon, aNumLat,
-                    aMappingFile, aReadHDDCDD, aScalarSourceDir, aWriteHDDCDD, aScaleHDDCDD, aBaseHDDFileName, aBaseCDDFileName);
+                    aMappingFile, aReadHDDCDD, aScalarSourceDir, aWriteHDDCDD, aScaleHDDCDD, aBaseHDDFileName, aBaseCDDFileName,
+                    aUseGCAMUSA);
             }
 
             // now run the current period
@@ -747,8 +747,7 @@ void GCAM_E3SM_interface::runGCAM( int *yyyymmdd, double *gcamoluc, double *gcam
 void GCAM_E3SM_interface::setLandProductivityScalingGCAM(int *yyyymmdd, double *aELMArea, double *aELMPFTFract, double *aELMNPP, double *aELMHR,
                                          int *aNumLon, int *aNumLat, int *aNumPFT, std::string aMappingFile, int *aFirstCoupledYear, bool aReadScalars,
                                          std::string aScalarSourceDir, bool aWriteScalars, bool aScaleAgYield, bool aScaleCarbon,
-                                         std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName,
-                                         bool aUseGCAMUSA) {
+                                         std::string aBaseNPPFileName, std::string aBaseHRFileName, std::string aBasePFTWtFileName) {
     // Get year only of the current date
     // Note that GCAM runs one period ahead of E3SM. We make that adjustment here
     const Modeltime* modeltime = runner->getInternalScenario()->getModeltime();
@@ -805,7 +804,7 @@ void GCAM_E3SM_interface::setLandProductivityScalingGCAM(int *yyyymmdd, double *
             numScalars = e3sm2gcam.readScalers(fName, scalarYears, scalarRegion, scalarLandTech, aboveScalarData, belowScalarData);
         } else {
             coupleLog << "In setLandProductivityScalingGCAM, Reading grid mapping file" << endl;
-            e3sm2gcam.readRegionalMappingData(aMappingFile, aUseGCAMUSA);
+            e3sm2gcam.readRegionalMappingData(aMappingFile, true, false, false);
             coupleLog << "In setLandProductivityScalingGCAM, Calculating scalars from data." << endl;
             e3sm2gcam.calcScalers(gcamYear, aELMArea, aELMPFTFract, aELMNPP, aELMHR,
                                   scalarYears, scalarRegion, scalarLandTech, aboveScalarData, belowScalarData,
@@ -978,16 +977,13 @@ void GCAM_E3SM_interface::setLandProductivityScalingGCAM(int *yyyymmdd, double *
  * \param aScaleHDDCDD If true, apply scaling based on baseline comparison
  * \param aBaseHDDFileName Path to baseline degree days CSV file (required if aScaleHDDCDD is true)
  * \param aBaseCDDFileName Path to baseline degree days CSV file (required if aScaleHDDCDD is true)
- *
- * With GCAM-USA, the mapping file has both the 32 GCAM regions and the 51 states, and all rows are read.
- * Buildings in GCAM-USA are modeled by state, so the states get their own degree days. The USA region
- * also gets a value, but its GCAM degree days are zero, so it is unaffected.
+ * \param aUseGCAMUSA If true, read the GCAM-USA state rows of the regional mapping file and skip the USA rows
  *
  */
 void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *const aELMArea, const double *const aELMHDD,
     const double *const aELMCDD, const double *const aPopDensity, const double *const aELMLandFrac, const int *aNumLon,
     const int *aNumLat, const std::string &aMappingFile, const bool aReadHDDCDD, std::string aScalarSourceDir, const bool aWriteHDDCDD, bool aScaleHDDCDD,
-    const std::string &aBaseHDDFileName, const std::string &aBaseCDDFileName)
+    const std::string &aBaseHDDFileName, const std::string &aBaseCDDFileName, const bool aUseGCAMUSA)
 {
     ILogger& coupleLog = ILogger::getLogger("coupling_log");
     coupleLog.setLevel(ILogger::NOTICE);
@@ -1005,7 +1001,17 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
     DegreeDays degreeDays(*aNumLon, *aNumLat, false);
     
     // Read regional mapping (needed for both read and calculate paths)
-    degreeDays.readRegionalMappingData(aMappingFile);
+    if (!aUseGCAMUSA)
+    {
+        // The degree days mapping has only the 32 GCAM regions, so skip the state rows
+        degreeDays.readRegionalMappingData(aMappingFile, true, false, false);
+    }
+    else
+    {
+        // GCAM-USA models buildings by state, so read the state rows. Skip the USA rows, since GCAM-USA
+        // removes the USA buildings (replaced by the states), so USA has no degree days to set
+        degreeDays.readRegionalMappingData(aMappingFile, false, true, false);
+    }
     coupleLog << "Finished reading regional mapping data for degree days" << std::endl;
     
     // Process heating/cooling degree days. TODO: Consider taking file name as an argument, rather than hard coding
@@ -1265,8 +1271,8 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
         if (aCO2DownscalingMethod == "Convergence")
         {
             coupleLog << "Start Convergence-based downscaling" << endl;
-            // Region names without spaces, to match the EmissDownscale region IDs
-            surfaceCO2.readRegionalMappingData(aRegionMappingFile, false, false, true);
+            // Skip the state rows; region names without spaces, to match the EmissDownscale region IDs
+            surfaceCO2.readRegionalMappingData(aRegionMappingFile, true, false, true);
             coupleLog << "Finish read regional mapping data" << aRegionMappingFile << endl;
         
             coupleLog << "Start readCountryMappingData:" << aCountryMappingFile << endl;
@@ -1288,8 +1294,8 @@ void GCAM_E3SM_interface::downscaleEmissionsGCAM(double *gcamoemiss,
         }
         else
         {
-            // Region names without spaces, to match the EmissDownscale region IDs
-            surfaceCO2.readRegionalMappingData(aRegionMappingFile, false, false, true);
+            // Skip the state rows; region names without spaces, to match the EmissDownscale region IDs
+            surfaceCO2.readRegionalMappingData(aRegionMappingFile, true, false, true);
             coupleLog << "Finish read regional mapping data and start surface downscaling" << endl;
         
             //surfaceCO2.readRegionBaseYearEmissionData(aBaseCO2GcamFileName);
