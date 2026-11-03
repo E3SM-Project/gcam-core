@@ -46,7 +46,7 @@
 using namespace std;
 
 // Constructor
-EmissDownscale::EmissDownscale(int aNumLon, int aNumLat, int aNumMon, int aNumLev, int aNumReg, int aNumCty, int aNumSector, int aNumPeriod) : ASpatialData(aNumLat * aNumLon * aNumMon * aNumLev),
+EmissDownscale::EmissDownscale(int aNumLon, int aNumLat, int aNumMon, int aNumLev, int aNumReg, int aNumCty, int aNumSector, int aNumPeriod) : ASpatialData(aNumLat * aNumLon * aNumMon * aNumLev, false),
                                             mBaseYearEmissVector(aNumLat * aNumLon * aNumMon * aNumLev, 0),
                                             mCurrYearEmissVector(aNumLat * aNumLon * aNumMon * aNumLev, 0),
                                             mBaseYearEmissions_sfc(aNumReg, 0),
@@ -77,106 +77,6 @@ EmissDownscale::EmissDownscale(int aNumLon, int aNumLat, int aNumMon, int aNumLe
 // Destructor
 EmissDownscale::~EmissDownscale()
 {
-}
-
-// Read in a regional mapping data from a file
-void EmissDownscale::readRegionMappingData(std::string aFileName, bool aUseGCAMUSA, bool isRegionalLevel)
-{
-    ifstream data(aFileName);
-    if (!data.is_open())
-    {
-        exit(EXIT_FAILURE);
-    }
-    string str;
-    getline(data, str); // skip the first line
-    while (getline(data, str))
-    {
-        istringstream iss(str);
-        string token;
-        double value;
-        int lon;
-        int lat;
-        string region;
-        string subregion;
-
-        // Skip region & GLU ID
-        getline(iss, token, ',');
-        getline(iss, token, ',');
-
-        // Parse longitude
-        getline(iss, token, ',');
-        lon = std::stoi(token);
-
-        // Parse latitude
-        getline(iss, token, ',');
-        lat = std::stoi(token);
-
-        string gridID = std::to_string(lon) + "_" + std::to_string(lat);
-
-        // Parse Region Name
-        getline(iss, token, ',');
-        region = token;
-        region.erase(remove(region.begin(), region.end(), '\"'), region.end());
-        region.erase(remove(region.begin(), region.end(), ' '), region.end()); // remove spaces in the region names
-
-        // Skip SubRegion Name
-        getline(iss, token, ',');
-
-        // Create region ID
-        string regID = region;
-
-        // filter out regions if running with GCAM-USA and this is not the regional level mapping file
-        if (aUseGCAMUSA) {
-            auto currReg = mRegionIDName.find(regID);
-            if (currReg != mRegionIDName.end()) {
-                if (isRegionalLevel && currReg->second > 32) {
-                    continue;
-                }
-                if (!isRegionalLevel && currReg->second == 1) {
-                    continue;
-                }
-            }
-        }
-
-        // Add region ID to the mapping vector.
-        // Note that there maybe more than one regID per gridID (hence, a vector)
-        if (mRegionMapping.find(gridID) == mRegionMapping.end())
-        {
-            // If gridID is not found, then add it with this regID in its vector
-            vector<string> temp;
-            temp.push_back(regID);
-            mRegionMapping[gridID] = temp;
-        }
-        else
-        {
-            // If gridID is found, then add to the existing regID vector
-            auto currGrid = mRegionMapping.find(gridID);
-             auto& regIDs = (*currGrid).second;
-            if (std::find(regIDs.begin(), regIDs.end(), regID) == regIDs.end())
-            {
-               // If regID is not found, add it to the vector
-               regIDs.push_back(regID);
-            }
-        }
-
-        // Parse Weight -- this is the proportion of the cell/land occupied the the land unit
-        // The values across land units sum to one within a cell
-        getline(iss, token, ',');
-        value = std::stod(token);
-
-        // if first land unit in this region, then set the first value
-        // otherwise add to existing value to get the proportion of cell/land covered by this region
-        if (mRegionWeights.find(std::make_pair(gridID, regID)) == mRegionWeights.end())
-        {
-            mRegionWeights[std::make_pair(gridID, regID)] = value;
-        }
-        else
-        {
-            mRegionWeights[std::make_pair(gridID, regID)] += value;
-        }
-    }
-
-    return;
 }
 
 // Read in a country mapping data from a file
