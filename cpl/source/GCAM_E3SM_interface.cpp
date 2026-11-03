@@ -1017,7 +1017,7 @@ void GCAM_E3SM_interface::setDegreeDaysGCAM(const int aGCAMYear, const double *c
     // Process heating/cooling degree days. TODO: Consider taking file name as an argument, rather than hard coding
     if (aReadHDDCDD)
     {
-        std::string degreeDaysFile = aScalarSourceDir + "./hdd_cdd_scalars_" + std::to_string(aGCAMYear) + ".csv";
+        std::string degreeDaysFile = aScalarSourceDir + "/hdd_cdd_scalars_" + std::to_string(aGCAMYear) + ".csv";
         coupleLog << "Reading degree day scalars from file: " << degreeDaysFile << std::endl;
         numDegreeDayValues = degreeDays.readDegreeDays(degreeDaysFile, degreeDaysYears, degreeDaysRegions, hddValues, cddValues);
         coupleLog << "Read " << numDegreeDayValues << " degree day regional values" << std::endl;
